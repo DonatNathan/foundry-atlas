@@ -4,6 +4,7 @@ import ForceGraph2D, {
   type LinkObject,
   type NodeObject,
 } from 'react-force-graph-2d';
+import { forceCollide } from 'd3-force';
 import type { Application, AppLink, Relationship } from '../types';
 import { colorOf, degreeOf, neighbors, RELATIONSHIP_VERBS } from '../data';
 
@@ -34,6 +35,28 @@ const LINK_BASE = 'rgba(95, 107, 124, 0.25)';
 const linkEnd = (end: GLink['source']): string =>
   typeof end === 'object' && end !== null ? String(end.id) : String(end);
 
+// Clickable radius around a node, in graph units: at least ~12 screen px so
+// small nodes stay easy to hit, capped so far-zoom hit areas don't swallow
+// neighboring nodes.
+const hitRadiusOf = (node: GNode, scale: number): number =>
+  Math.max(node.radius + 6, Math.min(12 / scale, 26));
+
+// Label visibility/geometry — must match the label drawn in paintNode.
+const labelVisibleAt = (scale: number): boolean => (scale - 0.85) / 0.9 > 0.02;
+const labelFontSize = (scale: number): number => Math.max(3.4, 11 / scale);
+const measureCtx = document.createElement('canvas').getContext('2d')!;
+
+const pointInLabel = (node: GNode, gx: number, gy: number, scale: number): boolean => {
+  const x = node.x ?? 0;
+  const y = node.y ?? 0;
+  const fontSize = labelFontSize(scale);
+  measureCtx.font = `400 ${fontSize}px Inter, sans-serif`;
+  const w = measureCtx.measureText(node.app.name).width + 4 / scale;
+  return (
+    gx >= x - w / 2 && gx <= x + w / 2 && gy >= y + node.radius + 1 && gy <= y + node.radius + 1 + fontSize * 1.4
+  );
+};
+
 export default function GraphView({
   apps,
   links,
@@ -45,6 +68,11 @@ export default function GraphView({
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight });
   const [hoverId, setHoverId] = useState<string | null>(null);
+  const hoverIdRef = useRef<string | null>(null);
+  const setHover = useCallback((id: string | null) => {
+    hoverIdRef.current = id;
+    setHoverId(id);
+  }, []);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -60,12 +88,17 @@ export default function GraphView({
   // simulation keeps its positions across hover/selection re-renders.
   const graphData = useMemo(() => {
     const present = new Set(apps.map((a) => a.id));
-    const nodes: GNode[] = apps.map((app) => ({
-      id: app.id,
-      app,
-      color: colorOf(app),
-      radius: 4 + Math.sqrt(degreeOf(app.id)) * 2.1,
-    }));
+    const nodes: GNode[] = apps
+      .map((app) => ({
+        id: app.id,
+        app,
+        color: colorOf(app),
+        radius: 4 + Math.sqrt(degreeOf(app.id)) * 2.1,
+      }))
+      // Big nodes first: paint order doubles as z-order on both the visible
+      // and the pointer-detection canvas, so smaller nodes painted later stay
+      // visible — and hoverable/draggable — next to large hubs.
+      .sort((a, b) => b.radius - a.radius);
     const visibleLinks: GLink[] = links
       .filter((l) => present.has(l.source_id) && present.has(l.target_id))
       .map((l) => ({
@@ -77,12 +110,20 @@ export default function GraphView({
     return { nodes, links: visibleLinks };
   }, [apps, links]);
 
-  // Tune forces for an airy, Obsidian-like layout.
+  // Tune forces for an airy, Obsidian-like layout. The collision force keeps
+  // nodes far enough apart that their enlarged hit areas (and labels) don't
+  // overlap and steal each other's hover/drag detection.
   useEffect(() => {
     const fg = fgRef.current;
     if (!fg) return;
     fg.d3Force('charge')?.strength(-260);
     fg.d3Force('link')?.distance(72);
+    fg.d3Force(
+      'collide',
+      forceCollide<GNode>()
+        .radius((n) => n.radius + 16)
+        .strength(0.9)
+    );
     fg.d3ReheatSimulation();
   }, [graphData]);
 
@@ -94,6 +135,23 @@ export default function GraphView({
       fgRef.current?.centerAt(node.x, node.y, 600);
     }
   }, [selectedId, graphData]);
+
+  // Dev-only hook for automated UI testing: expose node screen positions.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    (window as unknown as Record<string, unknown>).__atlas = {
+      nodeScreenCoords: () =>
+        graphData.nodes.map((n) => ({
+          id: n.id,
+          ...fgRef.current!.graph2ScreenCoords(n.x ?? 0, n.y ?? 0),
+        })),
+      hoveredId: () => hoverIdRef.current,
+      zoom: (k?: number) => (k == null ? fgRef.current!.zoom() : fgRef.current!.zoom(k, 0)),
+      centerAt: (x: number, y: number) => fgRef.current!.centerAt(x, y, 0),
+      nodePositions: () =>
+        graphData.nodes.map((n) => ({ id: n.id, x: n.x, y: n.y, radius: n.radius })),
+    };
+  }, [graphData]);
 
   const zoomToFit = useCallback(() => fgRef.current?.zoomToFit(500, 70), []);
   useEffect(() => {
@@ -204,14 +262,80 @@ export default function GraphView({
     [focusId, selectedId, learningPathMode, nodeAlpha]
   );
 
+  // Pointer-detection canvas gets circles only (used by force-graph for drag
+  // and link tooltips). Painting label rects here lets wide name strips steal
+  // hover from neighboring nodes, so labels are handled by pickNodeAt instead.
   const paintPointerArea = useCallback(
-    (node: GNode, color: string, ctx: CanvasRenderingContext2D) => {
+    (node: GNode, color: string, ctx: CanvasRenderingContext2D, scale: number) => {
       ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.arc(node.x ?? 0, node.y ?? 0, node.radius + 6, 0, 2 * Math.PI);
+      ctx.arc(node.x ?? 0, node.y ?? 0, hitRadiusOf(node, scale), 0, 2 * Math.PI);
       ctx.fill();
     },
     []
+  );
+
+  // Position-based picking, the single source of truth for hover and click:
+  // nearest node whose hit circle contains the point wins; otherwise a node
+  // whose (visible) label contains it. Unlike force-graph's painted-pixel
+  // detection, overlapping areas resolve to the nearest node, never a steal.
+  const pickNodeAt = useCallback(
+    (gx: number, gy: number, scale: number): GNode | null => {
+      let best: GNode | null = null;
+      let bestDist = Infinity;
+      for (const n of graphData.nodes) {
+        if (n.x == null || n.y == null) continue;
+        const d = Math.hypot(n.x - gx, n.y - gy);
+        if (d <= hitRadiusOf(n, scale) && d < bestDist) {
+          best = n;
+          bestDist = d;
+        }
+      }
+      if (best || !labelVisibleAt(scale)) return best;
+      for (const n of graphData.nodes) {
+        if (n.x == null || n.y == null || !pointInLabel(n, gx, gy, scale)) continue;
+        const d = Math.hypot(n.x - gx, n.y - gy);
+        if (d < bestDist) {
+          best = n;
+          bestDist = d;
+        }
+      }
+      return best;
+    },
+    [graphData]
+  );
+
+  // Custom hover tracking via pickNodeAt. force-graph's own hover detection
+  // samples painted pixels on its render loop, which both races fast clicks
+  // and mis-resolves overlapping areas.
+  const handlePointerMove = useCallback(
+    (event: React.PointerEvent) => {
+      const fg = fgRef.current;
+      if (!fg || !(event.target instanceof HTMLCanvasElement)) return;
+      const { offsetX, offsetY } = event.nativeEvent;
+      const { x: gx, y: gy } = fg.screen2GraphCoords(offsetX, offsetY);
+      const picked = pickNodeAt(gx, gy, fg.zoom());
+      const id = picked ? String(picked.id) : null;
+      if (id !== hoverIdRef.current) setHover(id);
+      event.target.style.cursor = id ? 'pointer' : 'grab';
+    },
+    [pickNodeAt, setHover]
+  );
+
+  // Clicks reported by force-graph as background/link clicks may actually be
+  // on a node (see handlePointerMove) — re-pick by position before deselecting.
+  const handleBackgroundClick = useCallback(
+    (event: MouseEvent) => {
+      const fg = fgRef.current;
+      if (!fg) {
+        onSelect(null);
+        return;
+      }
+      const { x: gx, y: gy } = fg.screen2GraphCoords(event.offsetX, event.offsetY);
+      const best = pickNodeAt(gx, gy, fg.zoom());
+      onSelect(best ? String(best.id) : null);
+    },
+    [pickNodeAt, onSelect]
   );
 
   const linkTouchesFocus = useCallback(
@@ -222,7 +346,12 @@ export default function GraphView({
   );
 
   return (
-    <div ref={containerRef} className="graph-container">
+    <div
+      ref={containerRef}
+      className="graph-container"
+      onPointerMove={handlePointerMove}
+      onPointerLeave={() => setHover(null)}
+    >
       <ForceGraph2D<NodeExtra, LinkExtra>
         ref={fgRef}
         width={size.w}
@@ -232,9 +361,20 @@ export default function GraphView({
         nodeCanvasObject={paintNode}
         nodePointerAreaPaint={paintPointerArea}
         nodeLabel={() => ''}
-        onNodeHover={(n) => setHoverId(n ? String(n.id) : null)}
         onNodeClick={(n) => onSelect(String(n.id))}
-        onBackgroundClick={() => onSelect(null)}
+        onBackgroundClick={handleBackgroundClick}
+        onLinkClick={(_l, event) => handleBackgroundClick(event)}
+        onNodeDragEnd={(n) => {
+          // Pin where dropped so the simulation doesn't yank the node back.
+          n.fx = n.x;
+          n.fy = n.y;
+        }}
+        onNodeRightClick={(n) => {
+          // Right-click releases a pinned node back into the simulation.
+          n.fx = undefined;
+          n.fy = undefined;
+          fgRef.current?.d3ReheatSimulation();
+        }}
         linkColor={(l) => {
           if (linkTouchesFocus(l)) return 'rgba(173, 196, 255, 0.85)';
           if (focusSet || learningPathMode) return 'rgba(95, 107, 124, 0.07)';

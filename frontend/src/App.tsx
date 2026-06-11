@@ -56,8 +56,8 @@ export default function App() {
         />
       )}
       <footer className="hint">
-        Hover a node to see its neighborhood · click for details · drag to rearrange · scroll to
-        zoom
+        Hover a node to see its neighborhood · click for details · drag to pin, right-click to
+        release · scroll to zoom
       </footer>
     </div>
   );
