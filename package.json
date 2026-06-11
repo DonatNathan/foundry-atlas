@@ -1,0 +1,11 @@
+{
+  "name": "palantir-foundry-map",
+  "private": true,
+  "description": "Foundry Atlas — an interactive map of Palantir Foundry applications",
+  "scripts": {
+    "db": "node database/build.mjs",
+    "dev": "npm --prefix frontend run dev",
+    "build": "node database/build.mjs && npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview"
+  }
+}

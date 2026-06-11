@@ -1,0 +1,906 @@
+{
+  "categories": [
+    {
+      "id": "data-integration",
+      "name": "Data Integration",
+      "color": "#4C90F0",
+      "sort": 1
+    },
+    {
+      "id": "ontology",
+      "name": "Ontology",
+      "color": "#EC9A3C",
+      "sort": 2
+    },
+    {
+      "id": "analytics",
+      "name": "Analytics",
+      "color": "#32A467",
+      "sort": 3
+    },
+    {
+      "id": "app-building",
+      "name": "Application Building",
+      "color": "#9881F3",
+      "sort": 4
+    },
+    {
+      "id": "ai-ml",
+      "name": "AI & Machine Learning",
+      "color": "#13C9BA",
+      "sort": 5
+    },
+    {
+      "id": "governance",
+      "name": "Governance & Operations",
+      "color": "#F5498B",
+      "sort": 6
+    }
+  ],
+  "applications": [
+    {
+      "id": "agent-studio",
+      "name": "AIP Agent Studio",
+      "category_id": "ai-ml",
+      "description": "The builder for conversational AI agents: configure system prompts, retrieval over documents and objects, and tools (Functions, Actions) the agent may use, then publish chat agents to users and applications.",
+      "use_case": "Create governed, ontology-aware chat assistants — a maintenance copilot that knows your machines and can file work orders via Actions.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/agent-studio/overview/",
+      "tips": "Agents become genuinely useful when given ontology tools — retrieval alone is a demo, retrieval + Actions is an operational workflow."
+    },
+    {
+      "id": "aip-assist",
+      "name": "AIP Assist",
+      "category_id": "ai-ml",
+      "description": "The platform-wide AI assistant: an LLM copilot embedded across Foundry that answers questions about the platform, explains resources, and helps generate pipelines, code, and app configurations.",
+      "use_case": "Accelerate every workflow — ask how to do something in Foundry, generate a Pipeline Builder transform, explain an unfamiliar dataset or repository.",
+      "tier": "beginner",
+      "is_core": true,
+      "learning_order": 10,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/aip-assist/overview/",
+      "tips": "Turn it on from day one — it is the best onboarding tool in the platform. Ask it \"how do I…\" before reaching for the docs."
+    },
+    {
+      "id": "aip-evals",
+      "name": "AIP Evals",
+      "category_id": "ai-ml",
+      "description": "The evaluation framework for AI workflows: define test suites with expected outcomes, run them against Logic functions and agents across model/prompt versions, and compare results before shipping.",
+      "use_case": "Make LLM workflows production-grade — regression-test prompts, compare models, and quantify quality instead of eyeballing outputs.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/evals/overview/",
+      "tips": "Treat Evals like unit tests for AI: no Logic function or agent should ship to operations without an eval suite behind it."
+    },
+    {
+      "id": "aip-logic",
+      "name": "AIP Logic",
+      "category_id": "ai-ml",
+      "description": "A no-code board for building LLM-powered functions: compose prompts, ontology context, tool calls, and structured outputs into testable \"Logic functions\" that can act on the Ontology.",
+      "use_case": "Build production LLM workflows — summarize objects, extract structure from documents, recommend actions — without managing models or glue code.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/logic/overview/",
+      "tips": "The heart of \"AIP on the Ontology\". Because Logic functions are just Functions, everything that can call a Function (Workshop, Automate, OSDK) can call your LLM logic."
+    },
+    {
+      "id": "modeling-objectives",
+      "name": "Modeling Objectives",
+      "category_id": "ai-ml",
+      "description": "The model lifecycle manager: register models (Foundry-trained or external), evaluate and compare candidates against an objective, then release and deploy them as live endpoints or batch transforms.",
+      "use_case": "Productionize ML — manage staging/production releases, host inference endpoints, and wire model outputs into pipelines, Functions, and apps.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/modeling-objectives/overview/",
+      "tips": "The MLOps backbone of Foundry: train wherever you like (Code Workspaces, externally), but deploy and govern through Modeling Objectives."
+    },
+    {
+      "id": "contour",
+      "name": "Contour",
+      "category_id": "analytics",
+      "description": "Point-and-click analysis on top of datasets: build \"analysis paths\" of filters, joins, pivots, and charts on billions of rows without writing code, and save them as dashboards.",
+      "use_case": "Tabular, dataset-level exploration and BI-style analysis — the everyday tool for analysts to answer questions from datasets quickly.",
+      "tier": "beginner",
+      "is_core": true,
+      "learning_order": 5,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/contour/overview/",
+      "tips": "The classic first analytics tool in Foundry. Works on datasets (pre-ontology); use Quiver when you want to analyze ontology objects instead."
+    },
+    {
+      "id": "fusion",
+      "name": "Fusion",
+      "category_id": "analytics",
+      "description": "Foundry's spreadsheet application: familiar formulas and sheets, but connected live to datasets and ontology objects, with write-back and branching instead of CSV exports.",
+      "use_case": "Give spreadsheet-native users (finance, planning, ops) a live, governed Excel-like surface over platform data.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/fusion/overview/",
+      "tips": "Great adoption bridge for Excel-heavy teams — the data stays governed and refreshable instead of dying in email attachments."
+    },
+    {
+      "id": "map",
+      "name": "Map",
+      "category_id": "analytics",
+      "description": "The geospatial application: layer ontology objects, imagery, and geo-data on interactive maps, with spatial and temporal filtering and analysis tools.",
+      "use_case": "Geospatial situational awareness and analysis — fleet positions, facility networks, territory analysis — driven by ontology objects with location properties.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/map/overview/",
+      "tips": "Only relevant if your objects have geospatial properties — but indispensable when they do. Maps embed nicely into Workshop apps."
+    },
+    {
+      "id": "notepad",
+      "name": "Notepad",
+      "category_id": "analytics",
+      "description": "Collaborative documents with live, embedded platform content: Contour charts, Quiver cards, object tables, and metrics stay up to date inside the narrative text.",
+      "use_case": "Write reports, runbooks, and decision documents whose numbers and charts update automatically with the data.",
+      "tier": "beginner",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/notepad/overview/",
+      "tips": "Use Notepad for anything you'd otherwise paste screenshots into a doc for — embedded analyses keep living documents honest."
+    },
+    {
+      "id": "quiver",
+      "name": "Quiver",
+      "category_id": "analytics",
+      "description": "The object-centric analytics application: charts, time series, pivots, and interactive dashboards built directly on ontology objects and their links, with drill-through to the underlying objects.",
+      "use_case": "Analyze the operational world via the Ontology — e.g. plot sensor time series per Machine object, then pivot to its open work orders.",
+      "tier": "intermediate",
+      "is_core": true,
+      "learning_order": 9,
+      "status": "stable",
+      "era": "Modern object analytics",
+      "docs_url": "https://www.palantir.com/docs/foundry/quiver/overview/",
+      "tips": "Think \"Contour, but for objects\". Quiver cards can be embedded into Workshop apps, which makes it a building block, not just an analysis tool."
+    },
+    {
+      "id": "developer-console",
+      "name": "Developer Console",
+      "category_id": "app-building",
+      "description": "The portal for building external applications with the Ontology SDK (OSDK): generates typed TypeScript/Python/Java SDKs from your ontology and manages OAuth clients, scopes, and API access.",
+      "use_case": "Build custom websites, mobile apps, or backend services outside Foundry that read and write the Ontology through generated, type-safe SDKs.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/ontology-sdk/overview/",
+      "tips": "The escape hatch beyond Workshop: full developer freedom (React, mobile, services) while keeping ontology governance. OSDK is one of the fastest-evolving parts of the platform."
+    },
+    {
+      "id": "marketplace",
+      "name": "Marketplace",
+      "category_id": "app-building",
+      "description": "The packaging and distribution system (Foundry DevOps): bundle pipelines, ontologies, Workshop apps, and AIP logic into installable, upgradeable products that can be deployed across spaces and stacks.",
+      "use_case": "Ship a complete use case from a dev environment to production — or to another organization — as a versioned, parameterized product instead of manual copying.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/marketplace/overview/",
+      "tips": "This is \"DevOps for use cases\". Also where Palantir-built reference solutions are installed from — browsing it is a great way to learn solution patterns."
+    },
+    {
+      "id": "slate",
+      "name": "Slate",
+      "category_id": "app-building",
+      "description": "The original application builder: fully custom HTML/CSS/JavaScript apps with handlebars templating and direct query wiring. Maximum flexibility, but no ontology-native widgets and a much steeper maintenance burden.",
+      "use_case": "Legacy custom dashboards and apps, or rare pixel-perfect/custom-JS requirements that Workshop cannot meet. New development should default to Workshop.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "legacy",
+      "era": "Legacy — superseded by Workshop for most uses",
+      "docs_url": "https://www.palantir.com/docs/foundry/slate/overview/",
+      "tips": "You will meet Slate apps in older deployments. Learn to maintain them if needed, but build new applications in Workshop (or OSDK for fully custom needs)."
+    },
+    {
+      "id": "solution-designer",
+      "name": "Solution Designer",
+      "category_id": "app-building",
+      "description": "A visual canvas for designing solution architectures: diagram the datasets, ontology entities, and applications of a use case before and while you build it, linked to the real resources.",
+      "use_case": "Plan and communicate the architecture of a Foundry use case — the blueprint that engineering, ontology, and app work align on.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/solution-designer/overview/",
+      "tips": "Useful on multi-team builds: it keeps the target architecture visible and clickable rather than buried in slide decks."
+    },
+    {
+      "id": "workshop",
+      "name": "Workshop",
+      "category_id": "app-building",
+      "description": "The drag-and-drop builder for operational applications on the Ontology: assemble pages from widgets (tables, charts, forms, maps), wire them to object sets, variables, Functions, and Actions — no code required.",
+      "use_case": "Build the apps end users actually work in every day: triage queues, planning tools, 360° views — reading from the Ontology and writing back via Actions.",
+      "tier": "beginner",
+      "is_core": true,
+      "learning_order": 8,
+      "status": "stable",
+      "era": "Modern default",
+      "docs_url": "https://www.palantir.com/docs/foundry/workshop/overview/",
+      "tips": "Workshop is where the Ontology pays off — most Foundry value reaches end users through a Workshop app. The single most important app-building skill on the platform."
+    },
+    {
+      "id": "code-repositories",
+      "name": "Code Repositories",
+      "category_id": "data-integration",
+      "description": "A full web-based development environment with Git version control for writing data transformations in Python (PySpark), Java, or SQL, as well as TypeScript/Python Functions — with CI checks, branching, and pull requests.",
+      "use_case": "Write code-based data transforms when logic outgrows Pipeline Builder, and author Functions that power Actions and application logic.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": 11,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/code-repositories/overview/",
+      "tips": "The pro-code counterpart of Pipeline Builder. If you know Git and PySpark you will feel at home. Used both for heavy data transforms and for authoring Functions."
+    },
+    {
+      "id": "code-workbook",
+      "name": "Code Workbook",
+      "category_id": "data-integration",
+      "description": "The original notebook-style analysis and transformation tool, mixing Python/R/SQL nodes in a visual graph. Still encountered on many stacks but no longer the recommended option.",
+      "use_case": "Legacy exploratory analysis and lightweight transforms; on new projects prefer Code Workspaces (analysis) and Pipeline Builder / Code Repositories (pipelines).",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "legacy",
+      "era": "Legacy — superseded by Code Workspaces",
+      "docs_url": "https://www.palantir.com/docs/foundry/code-workbook/overview/",
+      "tips": "You will find plenty of existing Workbooks in older projects, so it's worth being able to read them — but don't start new work here."
+    },
+    {
+      "id": "code-workspaces",
+      "name": "Code Workspaces",
+      "category_id": "data-integration",
+      "description": "Hosted JupyterLab and RStudio environments running inside Foundry, with direct access to datasets and the Ontology — for exploratory data science and model development.",
+      "use_case": "Do iterative, notebook-style data science (EDA, feature engineering, model training) in familiar tools without leaving the platform.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/code-workspaces/overview/",
+      "tips": "The modern home for data scientists, replacing most Code Workbook use cases. Models trained here are submitted to Modeling Objectives for productionization."
+    },
+    {
+      "id": "data-connection",
+      "name": "Data Connection",
+      "category_id": "data-integration",
+      "description": "The gateway between Foundry and the outside world. Provides 200+ connectors (JDBC, SAP, Salesforce, S3, REST APIs, ...) plus on-premise agents to sync external systems into Foundry datasets, in batch or streaming mode.",
+      "use_case": "Set up syncs from source systems (databases, ERPs, cloud storage, APIs) into raw Foundry datasets, and export data back out to external systems.",
+      "tier": "intermediate",
+      "is_core": true,
+      "learning_order": 4,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/data-connection/overview/",
+      "tips": "You usually consume data someone else connected before you set up your own sync. Understand sources, agents, and sync schedules before diving into connector specifics."
+    },
+    {
+      "id": "data-lineage",
+      "name": "Data Lineage",
+      "category_id": "data-integration",
+      "description": "An interactive graph of how datasets, transforms, models, and ontology objects depend on each other across the platform, with build status, schedules, and health overlays.",
+      "use_case": "Trace where data comes from and where it flows to, run impact analysis before changing a dataset, and debug pipeline failures end-to-end.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": 12,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/data-lineage/overview/",
+      "tips": "Open Data Lineage whenever you inherit an unfamiliar pipeline — it answers \"where does this column come from?\" faster than reading code."
+    },
+    {
+      "id": "dataset-preview",
+      "name": "Dataset Preview",
+      "category_id": "data-integration",
+      "description": "The default view of any dataset: browse rows, inspect the schema, view file contents, explore dataset history and branches, and check build status.",
+      "use_case": "Inspect any dataset's contents, schema, and transaction history — the first thing you open when exploring data you don't know.",
+      "tier": "beginner",
+      "is_core": true,
+      "learning_order": 2,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/dataset-preview/overview/",
+      "tips": "Datasets are the fundamental storage primitive of Foundry. Learn what a dataset, a transaction, and a branch are here — everything else builds on them."
+    },
+    {
+      "id": "media-sets",
+      "name": "Media Sets",
+      "category_id": "data-integration",
+      "description": "First-class storage for unstructured media — images, PDFs, audio, video — with schema enforcement, transactional updates, and APIs for processing media in pipelines and AIP workflows.",
+      "use_case": "Store and process documents, images, and other unstructured content, e.g. PDF extraction pipelines or media inputs to LLM workflows.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/media-sets/overview/",
+      "tips": "Reach for Media Sets instead of stuffing raw files into datasets whenever you work with documents or images, especially for AIP document-processing workflows."
+    },
+    {
+      "id": "pipeline-builder",
+      "name": "Pipeline Builder",
+      "category_id": "data-integration",
+      "description": "A visual, point-and-click application for building production data pipelines — batch or streaming — with transforms, joins, and cleaning steps, all version-controlled with branching and proposals.",
+      "use_case": "Build and deploy data transformation pipelines without writing code; the recommended starting point for most data integration work, including ontology hydration.",
+      "tier": "beginner",
+      "is_core": true,
+      "learning_order": 3,
+      "status": "new",
+      "era": "Modern default (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/pipeline-builder/overview/",
+      "tips": "The modern default for pipelines. Start here before Code Repositories — most pipelines never need custom code, and Pipeline Builder outputs can hydrate the Ontology directly."
+    },
+    {
+      "id": "approvals",
+      "name": "Approvals",
+      "category_id": "governance",
+      "description": "The review workflow system: changes to governed resources — ontology proposals, marketplace installations, checkout requests — go through structured propose/review/approve flows with full audit trail.",
+      "use_case": "Gate sensitive changes behind peer review, e.g. ontology schema changes proposed by builders and approved by ontology owners.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/approvals/overview/",
+      "tips": "Expect to meet Approvals the first time you propose an ontology change on a governed stack — it is Git-style review applied to platform configuration."
+    },
+    {
+      "id": "builds",
+      "name": "Builds & Schedules",
+      "category_id": "governance",
+      "description": "The execution layer for all computation: every transform run is a job inside a build. Inspect running and historical builds, read logs, and define schedules that keep pipelines fresh (time- or event-triggered).",
+      "use_case": "Monitor and debug pipeline executions, and schedule when datasets rebuild — the operational heartbeat of data integration.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/builds/overview/",
+      "tips": "When a pipeline \"doesn't work\", the answer is almost always in the build logs. Learn to read a build graph early — it pays off daily."
+    },
+    {
+      "id": "checkpoints",
+      "name": "Checkpoints",
+      "category_id": "governance",
+      "description": "A governance mechanism that interrupts sensitive operations — exports, marking overrides, large queries — to require user justifications, which are recorded for audit.",
+      "use_case": "Enforce \"stop and justify\" moments on risky actions so security teams get an auditable trail of who did what and why.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/checkpoints/overview/",
+      "tips": "Mostly configured by platform administrators — as a builder you'll experience checkpoints rather than create them."
+    },
+    {
+      "id": "control-panel",
+      "name": "Control Panel",
+      "category_id": "governance",
+      "description": "The administration console: manage organizations, users and groups (via Multipass identity), markings and classification, enrollment settings, resource quotas, and platform-wide feature configuration.",
+      "use_case": "Administer the Foundry enrollment — identity providers, security markings, org boundaries, and which features and models are enabled.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/administration/overview/",
+      "tips": "Admin territory. Builders mainly need to know it exists and that markings/permissions configured here override everything downstream."
+    },
+    {
+      "id": "data-health",
+      "name": "Data Health",
+      "category_id": "governance",
+      "description": "The data quality application: attach health checks to datasets — freshness, schema, row counts, null ratios, custom expectations — and aggregate their status into monitored check groups.",
+      "use_case": "Catch data quality problems before consumers do: alert when a critical dataset is late, shrinks unexpectedly, or breaks schema.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/data-health/overview/",
+      "tips": "Production pipelines without health checks are incidents waiting to happen. Add freshness + row count checks to every dataset that feeds the Ontology."
+    },
+    {
+      "id": "projects",
+      "name": "Projects & Files",
+      "category_id": "governance",
+      "description": "The filesystem of Foundry (built on Compass): every resource — dataset, pipeline, app, ontology artifact — lives in folders within Projects, which are the primary unit of organization and access control.",
+      "use_case": "Navigate and organize all platform resources, and manage who can see and edit what through project roles and permissions.",
+      "tier": "beginner",
+      "is_core": true,
+      "learning_order": 1,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/projects/overview/",
+      "tips": "Literally the first thing you see in Foundry. Understand Projects → folders → resources and how roles cascade before creating anything."
+    },
+    {
+      "id": "automate",
+      "name": "Automate",
+      "category_id": "ontology",
+      "description": "The platform's automation engine (evolved from Object Monitoring): watch objects, metrics, or schedules for conditions and trigger effects — notifications, Actions, Logic functions — when they fire.",
+      "use_case": "Turn passive data into proactive operations: \"notify the planner when stock drops below threshold\", \"auto-apply this Action when a job fails\".",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/automate/overview/",
+      "tips": "The bridge from dashboards (humans watch data) to operations (the platform watches data). Pairs naturally with Actions and AIP Logic."
+    },
+    {
+      "id": "functions",
+      "name": "Functions",
+      "category_id": "ontology",
+      "description": "Server-side logic (TypeScript or Python, authored in Code Repositories) that runs against the Ontology — powering computed values, validations, Action logic, and callable APIs for apps and agents.",
+      "use_case": "Encode business logic once — e.g. \"compute remaining capacity\" or \"validate this reassignment\" — and reuse it across Workshop apps, Actions, OSDK apps, and AIP agents.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/functions/overview/",
+      "tips": "Functions are the glue between the Ontology and applications. If a Workshop app does something \"smart\", there is usually a Function behind it."
+    },
+    {
+      "id": "machinery",
+      "name": "Machinery",
+      "category_id": "ontology",
+      "description": "A process-orchestration application that defines stateful, multi-step operational processes (state machines) over ontology objects, coordinating humans and automation through each stage.",
+      "use_case": "Model long-running business processes — approvals chains, maintenance workflows, order lifecycles — with explicit states, transitions, and task assignment.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/machinery/overview/",
+      "tips": "Niche but powerful: reach for Machinery when a workflow has real states and handoffs, not just notifications."
+    },
+    {
+      "id": "object-explorer",
+      "name": "Object Explorer",
+      "category_id": "ontology",
+      "description": "A search-and-browse interface over all ontology objects: filter, pivot across links, build and save object sets, and view individual objects with their properties and history.",
+      "use_case": "Explore the ontology like a search engine — find objects, filter them into object sets, and hand those sets to Quiver, Workshop, or Actions.",
+      "tier": "beginner",
+      "is_core": true,
+      "learning_order": 7,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/object-explorer/overview/",
+      "tips": "The fastest way to \"feel\" what the Ontology is. Object sets you build here are reusable across the whole platform."
+    },
+    {
+      "id": "ontology-manager",
+      "name": "Ontology Manager",
+      "category_id": "ontology",
+      "description": "The control center for the Ontology — Foundry's semantic layer that turns datasets into Object Types (e.g. Customer, Flight, Machine) with properties, Links between them, and Actions that write changes back.",
+      "use_case": "Define and maintain object types, link types, action types, and their permissions — the shared \"digital twin\" vocabulary every operational app is built on.",
+      "tier": "beginner",
+      "is_core": true,
+      "learning_order": 6,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/ontology/overview/",
+      "tips": "The Ontology is THE central concept of Foundry — it is what separates Foundry from a classic data platform. Understand object types, links, and actions before touching Workshop or AIP."
+    },
+    {
+      "id": "vertex",
+      "name": "Vertex",
+      "category_id": "ontology",
+      "description": "A graph-and-scenario application over the Ontology: visualize networks of linked objects as an interactive \"digital twin\" and simulate what-if scenarios on top of them.",
+      "use_case": "Model and compare scenarios on connected systems — supply chains, networks, production plans — before committing changes back through Actions.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/vertex/overview/",
+      "tips": "Powerful for supply-chain and network use cases; only worth learning once your ontology is rich in links."
+    }
+  ],
+  "links": [
+    {
+      "source_id": "data-connection",
+      "target_id": "pipeline-builder",
+      "relationship": "feeds",
+      "description": "Synced raw datasets are the typical inputs of Pipeline Builder pipelines."
+    },
+    {
+      "source_id": "data-connection",
+      "target_id": "code-repositories",
+      "relationship": "feeds",
+      "description": "Synced datasets are read by code-based transforms."
+    },
+    {
+      "source_id": "data-connection",
+      "target_id": "media-sets",
+      "relationship": "feeds",
+      "description": "File-based syncs land documents and media into media sets."
+    },
+    {
+      "source_id": "media-sets",
+      "target_id": "pipeline-builder",
+      "relationship": "feeds",
+      "description": "Media sets are processed (OCR, extraction, chunking) in pipelines."
+    },
+    {
+      "source_id": "media-sets",
+      "target_id": "aip-logic",
+      "relationship": "feeds",
+      "description": "Documents and images from media sets are inputs to LLM workflows."
+    },
+    {
+      "source_id": "pipeline-builder",
+      "target_id": "dataset-preview",
+      "relationship": "feeds",
+      "description": "Pipeline outputs are datasets you inspect in Dataset Preview."
+    },
+    {
+      "source_id": "code-repositories",
+      "target_id": "dataset-preview",
+      "relationship": "feeds",
+      "description": "Transform outputs are datasets you inspect in Dataset Preview."
+    },
+    {
+      "source_id": "pipeline-builder",
+      "target_id": "ontology-manager",
+      "relationship": "feeds",
+      "description": "Clean pipeline outputs back (hydrate) ontology object types."
+    },
+    {
+      "source_id": "code-repositories",
+      "target_id": "ontology-manager",
+      "relationship": "feeds",
+      "description": "Code-based transform outputs back ontology object types."
+    },
+    {
+      "source_id": "pipeline-builder",
+      "target_id": "contour",
+      "relationship": "feeds",
+      "description": "Pipeline output datasets are analyzed in Contour."
+    },
+    {
+      "source_id": "code-workspaces",
+      "target_id": "code-workbook",
+      "relationship": "supersedes",
+      "description": "Code Workspaces is the modern replacement for most Code Workbook usage."
+    },
+    {
+      "source_id": "pipeline-builder",
+      "target_id": "code-workbook",
+      "relationship": "supersedes",
+      "description": "Pipeline Builder replaces Workbook-built production transforms."
+    },
+    {
+      "source_id": "code-workspaces",
+      "target_id": "modeling-objectives",
+      "relationship": "feeds",
+      "description": "Models trained in notebooks are submitted to Modeling Objectives."
+    },
+    {
+      "source_id": "code-repositories",
+      "target_id": "modeling-objectives",
+      "relationship": "feeds",
+      "description": "Model adapters and training code publish models to objectives."
+    },
+    {
+      "source_id": "code-repositories",
+      "target_id": "functions",
+      "relationship": "powers",
+      "description": "Functions are authored and versioned in Code Repositories."
+    },
+    {
+      "source_id": "data-lineage",
+      "target_id": "pipeline-builder",
+      "relationship": "monitors",
+      "description": "Lineage visualizes pipeline dependency graphs and build status."
+    },
+    {
+      "source_id": "data-lineage",
+      "target_id": "code-repositories",
+      "relationship": "monitors",
+      "description": "Lineage traces code-based transforms across datasets."
+    },
+    {
+      "source_id": "builds",
+      "target_id": "pipeline-builder",
+      "relationship": "monitors",
+      "description": "Every pipeline deployment runs as builds with logs and schedules."
+    },
+    {
+      "source_id": "builds",
+      "target_id": "code-repositories",
+      "relationship": "monitors",
+      "description": "Transform jobs run as builds; schedules keep outputs fresh."
+    },
+    {
+      "source_id": "data-health",
+      "target_id": "pipeline-builder",
+      "relationship": "monitors",
+      "description": "Health checks watch freshness, size, and schema of pipeline outputs."
+    },
+    {
+      "source_id": "data-health",
+      "target_id": "data-lineage",
+      "relationship": "complements",
+      "description": "Health status overlays on the lineage graph for at-a-glance triage."
+    },
+    {
+      "source_id": "data-health",
+      "target_id": "automate",
+      "relationship": "feeds",
+      "description": "Failing health checks can trigger automations and notifications."
+    },
+    {
+      "source_id": "ontology-manager",
+      "target_id": "object-explorer",
+      "relationship": "powers",
+      "description": "Object Explorer searches and browses the object types defined here."
+    },
+    {
+      "source_id": "ontology-manager",
+      "target_id": "workshop",
+      "relationship": "powers",
+      "description": "Workshop apps are built on object sets, links, and Actions."
+    },
+    {
+      "source_id": "ontology-manager",
+      "target_id": "quiver",
+      "relationship": "powers",
+      "description": "Quiver analyzes ontology objects, links, and time series."
+    },
+    {
+      "source_id": "ontology-manager",
+      "target_id": "vertex",
+      "relationship": "powers",
+      "description": "Vertex graphs and scenarios run over linked ontology objects."
+    },
+    {
+      "source_id": "ontology-manager",
+      "target_id": "map",
+      "relationship": "powers",
+      "description": "Map renders objects with geospatial properties as live layers."
+    },
+    {
+      "source_id": "ontology-manager",
+      "target_id": "fusion",
+      "relationship": "powers",
+      "description": "Fusion sheets can read and write ontology objects."
+    },
+    {
+      "source_id": "ontology-manager",
+      "target_id": "automate",
+      "relationship": "powers",
+      "description": "Automations watch object conditions and trigger ontology Actions."
+    },
+    {
+      "source_id": "ontology-manager",
+      "target_id": "machinery",
+      "relationship": "powers",
+      "description": "Process states and transitions are defined over ontology objects."
+    },
+    {
+      "source_id": "ontology-manager",
+      "target_id": "aip-logic",
+      "relationship": "powers",
+      "description": "Logic functions receive ontology context and act through Actions."
+    },
+    {
+      "source_id": "ontology-manager",
+      "target_id": "agent-studio",
+      "relationship": "powers",
+      "description": "Agents retrieve objects and call Actions as governed tools."
+    },
+    {
+      "source_id": "ontology-manager",
+      "target_id": "developer-console",
+      "relationship": "powers",
+      "description": "OSDK generates typed SDKs from the ontology definition."
+    },
+    {
+      "source_id": "functions",
+      "target_id": "workshop",
+      "relationship": "powers",
+      "description": "Functions compute derived values and drive logic inside Workshop apps."
+    },
+    {
+      "source_id": "functions",
+      "target_id": "ontology-manager",
+      "relationship": "powers",
+      "description": "Function-backed Actions implement complex write logic."
+    },
+    {
+      "source_id": "functions",
+      "target_id": "developer-console",
+      "relationship": "powers",
+      "description": "External OSDK apps call published Functions as APIs."
+    },
+    {
+      "source_id": "aip-logic",
+      "target_id": "functions",
+      "relationship": "builds-on",
+      "description": "Logic boards publish as Functions, callable everywhere Functions are."
+    },
+    {
+      "source_id": "modeling-objectives",
+      "target_id": "functions",
+      "relationship": "powers",
+      "description": "Deployed models are wrapped as Functions for live inference."
+    },
+    {
+      "source_id": "object-explorer",
+      "target_id": "quiver",
+      "relationship": "complements",
+      "description": "Object sets built in Explorer open directly in Quiver for analysis."
+    },
+    {
+      "source_id": "quiver",
+      "target_id": "workshop",
+      "relationship": "embeds-in",
+      "description": "Quiver cards and dashboards embed inside Workshop modules."
+    },
+    {
+      "source_id": "map",
+      "target_id": "workshop",
+      "relationship": "embeds-in",
+      "description": "Maps embed as widgets inside Workshop applications."
+    },
+    {
+      "source_id": "contour",
+      "target_id": "notepad",
+      "relationship": "embeds-in",
+      "description": "Contour charts and tables embed live into Notepad documents."
+    },
+    {
+      "source_id": "quiver",
+      "target_id": "notepad",
+      "relationship": "embeds-in",
+      "description": "Quiver visualizations embed live into Notepad documents."
+    },
+    {
+      "source_id": "workshop",
+      "target_id": "slate",
+      "relationship": "supersedes",
+      "description": "Workshop is the recommended replacement for most Slate apps."
+    },
+    {
+      "source_id": "aip-assist",
+      "target_id": "pipeline-builder",
+      "relationship": "assists",
+      "description": "Assist generates and explains pipeline transforms."
+    },
+    {
+      "source_id": "aip-assist",
+      "target_id": "workshop",
+      "relationship": "assists",
+      "description": "Assist helps configure widgets and app logic."
+    },
+    {
+      "source_id": "aip-assist",
+      "target_id": "contour",
+      "relationship": "assists",
+      "description": "Assist builds analysis paths from natural-language questions."
+    },
+    {
+      "source_id": "aip-assist",
+      "target_id": "code-repositories",
+      "relationship": "assists",
+      "description": "Assist explains and generates transform code."
+    },
+    {
+      "source_id": "aip-logic",
+      "target_id": "agent-studio",
+      "relationship": "powers",
+      "description": "Logic functions serve as tools that agents can invoke."
+    },
+    {
+      "source_id": "aip-logic",
+      "target_id": "automate",
+      "relationship": "complements",
+      "description": "Automations call Logic functions to add AI to triggered workflows."
+    },
+    {
+      "source_id": "aip-evals",
+      "target_id": "aip-logic",
+      "relationship": "monitors",
+      "description": "Eval suites regression-test Logic functions across versions."
+    },
+    {
+      "source_id": "aip-evals",
+      "target_id": "agent-studio",
+      "relationship": "monitors",
+      "description": "Eval suites score agent behavior before publishing."
+    },
+    {
+      "source_id": "agent-studio",
+      "target_id": "workshop",
+      "relationship": "embeds-in",
+      "description": "Published agents embed as chat widgets in Workshop apps."
+    },
+    {
+      "source_id": "projects",
+      "target_id": "ontology-manager",
+      "relationship": "governs",
+      "description": "Ontology resources live in projects; project roles gate who edits them."
+    },
+    {
+      "source_id": "projects",
+      "target_id": "pipeline-builder",
+      "relationship": "governs",
+      "description": "Pipelines and their datasets are organized and permissioned via projects."
+    },
+    {
+      "source_id": "control-panel",
+      "target_id": "projects",
+      "relationship": "governs",
+      "description": "Org structure, markings, and identity configured here scope all projects."
+    },
+    {
+      "source_id": "control-panel",
+      "target_id": "checkpoints",
+      "relationship": "governs",
+      "description": "Administrators configure checkpoint policies platform-wide."
+    },
+    {
+      "source_id": "approvals",
+      "target_id": "ontology-manager",
+      "relationship": "governs",
+      "description": "Ontology proposals are reviewed and approved before taking effect."
+    },
+    {
+      "source_id": "marketplace",
+      "target_id": "workshop",
+      "relationship": "packages",
+      "description": "Workshop apps ship inside installable Marketplace products."
+    },
+    {
+      "source_id": "marketplace",
+      "target_id": "ontology-manager",
+      "relationship": "packages",
+      "description": "Ontology definitions are packaged and deployed as products."
+    },
+    {
+      "source_id": "marketplace",
+      "target_id": "pipeline-builder",
+      "relationship": "packages",
+      "description": "Pipelines are bundled into products for cross-stack deployment."
+    },
+    {
+      "source_id": "solution-designer",
+      "target_id": "marketplace",
+      "relationship": "complements",
+      "description": "Architectures designed here are realized and shipped via Marketplace."
+    }
+  ]
+}
