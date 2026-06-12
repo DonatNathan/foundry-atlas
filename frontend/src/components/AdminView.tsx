@@ -1,0 +1,470 @@
+import { useMemo, useState } from 'react';
+import { Alert, Button, HTMLTable, Icon, InputGroup, Tag } from '@blueprintjs/core';
+import type { Application, AppLink, Category } from '../types';
+import { STATUS_LABELS, TIER_LABELS } from '../data';
+import { useData } from '../DataContext';
+import EditAppDialog from './EditAppDialog';
+import CategoryDialog from './CategoryDialog';
+import LinkDialog from './LinkDialog';
+
+interface AdminViewProps {
+  apps: Application[];
+  onCreate: (app: Application) => Promise<void>;
+  onUpdate: (app: Application) => Promise<void>;
+  onDelete: (app: Application) => Promise<void>;
+  onCreateCategory: (c: Category) => Promise<void>;
+  onUpdateCategory: (c: Category) => Promise<void>;
+  onDeleteCategory: (c: Category) => Promise<void>;
+  onCreateLink: (l: AppLink) => Promise<void>;
+  onUpdateLink: (l: AppLink) => Promise<void>;
+  onDeleteLink: (l: AppLink) => Promise<void>;
+}
+
+type Section = 'apps' | 'categories' | 'links';
+type AppEditing = { app: Application; mode: 'create' | 'edit' };
+type CatEditing = { category: Category; mode: 'create' | 'edit' };
+type LinkEditing = { link: AppLink; mode: 'create' | 'edit' };
+
+export default function AdminView({
+  apps,
+  onCreate,
+  onUpdate,
+  onDelete,
+  onCreateCategory,
+  onUpdateCategory,
+  onDeleteCategory,
+  onCreateLink,
+  onUpdateLink,
+  onDeleteLink,
+}: AdminViewProps) {
+  const { categories, categoryById, colorOf, links } = useData();
+
+  const [section, setSection] = useState<Section>('apps');
+  const [query, setQuery] = useState('');
+
+  const [appEditing, setAppEditing] = useState<AppEditing | null>(null);
+  const [appDeleting, setAppDeleting] = useState<Application | null>(null);
+  const [catEditing, setCatEditing] = useState<CatEditing | null>(null);
+  const [catDeleting, setCatDeleting] = useState<Category | null>(null);
+  const [linkEditing, setLinkEditing] = useState<LinkEditing | null>(null);
+  const [linkDeleting, setLinkDeleting] = useState<AppLink | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+
+  const appById = useMemo(() => new Map(apps.map((a) => [a.id, a])), [apps]);
+  const nameOf = (id: string) => appById.get(id)?.name ?? id;
+  const dotColor = (id: string) => {
+    const a = appById.get(id);
+    return a ? colorOf(a) : '#8F99A8';
+  };
+
+  const blankApp = (): Application => ({
+    id: '',
+    name: '',
+    category_id: categories[0]?.id ?? '',
+    description: '',
+    use_case: '',
+    tier: 'beginner',
+    is_core: false,
+    learning_order: null,
+    status: 'stable',
+    era: null,
+    docs_url: null,
+    tips: null,
+  });
+
+  const blankCategory = (): Category => ({
+    id: '',
+    name: '',
+    color: '#4C90F0',
+    sort: (categories.reduce((m, c) => Math.max(m, c.sort), 0) || 0) + 1,
+  });
+
+  const blankLink = (): AppLink => ({
+    source_id: '',
+    target_id: '',
+    relationship: 'feeds',
+    description: null,
+  });
+
+  const appRows = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const list = q
+      ? apps.filter((a) => a.name.toLowerCase().includes(q) || a.id.toLowerCase().includes(q))
+      : apps;
+    return [...list].sort((a, b) => a.name.localeCompare(b.name));
+  }, [apps, query]);
+
+  const catRows = useMemo(() => [...categories].sort((a, b) => a.sort - b.sort), [categories]);
+  const appsPerCategory = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const a of apps) counts.set(a.category_id, (counts.get(a.category_id) ?? 0) + 1);
+    return counts;
+  }, [apps]);
+
+  const linkRows = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const list = q
+      ? links.filter(
+          (l) =>
+            nameOf(l.source_id).toLowerCase().includes(q) ||
+            nameOf(l.target_id).toLowerCase().includes(q) ||
+            l.relationship.includes(q)
+        )
+      : links;
+    return [...list].sort((a, b) =>
+      nameOf(a.source_id).localeCompare(nameOf(b.source_id)) ||
+      nameOf(a.target_id).localeCompare(nameOf(b.target_id))
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [links, query, appById]);
+
+  const saveApp = async (app: Application) => {
+    if (!appEditing) return;
+    if (appEditing.mode === 'create') await onCreate(app);
+    else await onUpdate(app);
+    setAppEditing(null);
+  };
+
+  const saveCat = async (c: Category) => {
+    if (!catEditing) return;
+    if (catEditing.mode === 'create') await onCreateCategory(c);
+    else await onUpdateCategory(c);
+    setCatEditing(null);
+  };
+
+  const saveLink = async (l: AppLink) => {
+    if (!linkEditing) return;
+    if (linkEditing.mode === 'create') await onCreateLink(l);
+    else await onUpdateLink(l);
+    setLinkEditing(null);
+  };
+
+  const runDelete = async (fn: () => Promise<void>, clear: () => void) => {
+    setDeleteBusy(true);
+    setDeleteError(null);
+    try {
+      await fn();
+      clear();
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : 'Delete failed.');
+    } finally {
+      setDeleteBusy(false);
+    }
+  };
+
+  const newButton =
+    section === 'apps' ? (
+      <Button
+        icon="add"
+        intent="primary"
+        text="New application"
+        onClick={() => setAppEditing({ app: blankApp(), mode: 'create' })}
+      />
+    ) : section === 'categories' ? (
+      <Button
+        icon="add"
+        intent="primary"
+        text="New category"
+        onClick={() => setCatEditing({ category: blankCategory(), mode: 'create' })}
+      />
+    ) : (
+      <Button
+        icon="add"
+        intent="primary"
+        text="New link"
+        onClick={() => setLinkEditing({ link: blankLink(), mode: 'create' })}
+      />
+    );
+
+  return (
+    <div className="admin-view bp6-dark">
+      <div className="admin-view-bar">
+        <div>
+          <h2>Manage database</h2>
+          <p className="admin-view-sub">
+            {apps.length} applications · {categories.length} categories · {links.length} links
+          </p>
+        </div>
+        <div className="admin-view-actions">
+          <InputGroup
+            leftIcon="search"
+            placeholder={section === 'categories' ? 'Categories aren’t searchable…' : 'Search…'}
+            value={query}
+            disabled={section === 'categories'}
+            onChange={(e) => setQuery(e.target.value)}
+            round
+          />
+          {newButton}
+        </div>
+      </div>
+
+      <div className="admin-sections">
+        <button className={section === 'apps' ? 'active' : ''} onClick={() => setSection('apps')}>
+          Applications
+        </button>
+        <button
+          className={section === 'categories' ? 'active' : ''}
+          onClick={() => setSection('categories')}
+        >
+          Categories
+        </button>
+        <button className={section === 'links' ? 'active' : ''} onClick={() => setSection('links')}>
+          Links
+        </button>
+      </div>
+
+      <div className="admin-scroll">
+        {section === 'apps' && (
+          <HTMLTable striped className="app-table admin-table">
+            <thead>
+              <tr>
+                <th>Application</th>
+                <th>ID</th>
+                <th>Category</th>
+                <th>Level</th>
+                <th>Generation</th>
+                <th className="th-actions" aria-label="Actions" />
+              </tr>
+            </thead>
+            <tbody>
+              {appRows.map((a) => (
+                <tr key={a.id}>
+                  <td>
+                    <span className="cell-name">
+                      <span className="dot" style={{ background: colorOf(a) }} />
+                      {a.name}
+                      {a.is_core && (
+                        <Tag minimal intent="success" round>
+                          Core
+                        </Tag>
+                      )}
+                    </span>
+                  </td>
+                  <td className="cell-id">{a.id}</td>
+                  <td>{categoryById.get(a.category_id)?.name ?? '—'}</td>
+                  <td>{TIER_LABELS[a.tier]}</td>
+                  <td>{STATUS_LABELS[a.status]}</td>
+                  <td className="cell-actions">
+                    <button
+                      className="row-edit"
+                      title="Edit"
+                      aria-label={`Edit ${a.name}`}
+                      onClick={() => setAppEditing({ app: a, mode: 'edit' })}
+                    >
+                      <Icon icon="edit" size={14} />
+                    </button>
+                    <button
+                      className="row-edit row-delete"
+                      title="Delete"
+                      aria-label={`Delete ${a.name}`}
+                      onClick={() => {
+                        setDeleteError(null);
+                        setAppDeleting(a);
+                      }}
+                    >
+                      <Icon icon="trash" size={14} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </HTMLTable>
+        )}
+
+        {section === 'categories' && (
+          <HTMLTable striped className="app-table admin-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>ID</th>
+                <th>Color</th>
+                <th>Sort</th>
+                <th>Apps</th>
+                <th className="th-actions" aria-label="Actions" />
+              </tr>
+            </thead>
+            <tbody>
+              {catRows.map((c) => (
+                <tr key={c.id}>
+                  <td>
+                    <span className="cell-name">
+                      <span className="dot" style={{ background: c.color }} />
+                      {c.name}
+                    </span>
+                  </td>
+                  <td className="cell-id">{c.id}</td>
+                  <td className="cell-id">{c.color}</td>
+                  <td className="cell-num">{c.sort}</td>
+                  <td className="cell-num">{appsPerCategory.get(c.id) ?? 0}</td>
+                  <td className="cell-actions">
+                    <button
+                      className="row-edit"
+                      title="Edit"
+                      aria-label={`Edit ${c.name}`}
+                      onClick={() => setCatEditing({ category: c, mode: 'edit' })}
+                    >
+                      <Icon icon="edit" size={14} />
+                    </button>
+                    <button
+                      className="row-edit row-delete"
+                      title="Delete"
+                      aria-label={`Delete ${c.name}`}
+                      onClick={() => {
+                        setDeleteError(null);
+                        setCatDeleting(c);
+                      }}
+                    >
+                      <Icon icon="trash" size={14} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </HTMLTable>
+        )}
+
+        {section === 'links' && (
+          <HTMLTable striped className="app-table admin-table">
+            <thead>
+              <tr>
+                <th>Source</th>
+                <th>Relationship</th>
+                <th>Target</th>
+                <th>Description</th>
+                <th className="th-actions" aria-label="Actions" />
+              </tr>
+            </thead>
+            <tbody>
+              {linkRows.map((l) => (
+                <tr key={l.id ?? `${l.source_id}-${l.target_id}-${l.relationship}`}>
+                  <td>
+                    <span className="cell-name">
+                      <span className="dot" style={{ background: dotColor(l.source_id) }} />
+                      {nameOf(l.source_id)}
+                    </span>
+                  </td>
+                  <td>
+                    <Tag minimal>{l.relationship}</Tag>
+                  </td>
+                  <td>
+                    <span className="cell-name">
+                      <span className="dot" style={{ background: dotColor(l.target_id) }} />
+                      {nameOf(l.target_id)}
+                    </span>
+                  </td>
+                  <td className="cell-desc">{l.description}</td>
+                  <td className="cell-actions">
+                    <button
+                      className="row-edit"
+                      title="Edit"
+                      aria-label="Edit link"
+                      onClick={() => setLinkEditing({ link: l, mode: 'edit' })}
+                    >
+                      <Icon icon="edit" size={14} />
+                    </button>
+                    <button
+                      className="row-edit row-delete"
+                      title="Delete"
+                      aria-label="Delete link"
+                      onClick={() => {
+                        setDeleteError(null);
+                        setLinkDeleting(l);
+                      }}
+                    >
+                      <Icon icon="trash" size={14} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </HTMLTable>
+        )}
+      </div>
+
+      <EditAppDialog
+        app={appEditing?.app ?? null}
+        mode={appEditing?.mode}
+        onClose={() => setAppEditing(null)}
+        onSave={saveApp}
+      />
+
+      <CategoryDialog
+        category={catEditing?.category ?? null}
+        mode={catEditing?.mode}
+        onClose={() => setCatEditing(null)}
+        onSave={saveCat}
+      />
+
+      <LinkDialog
+        link={linkEditing?.link ?? null}
+        mode={linkEditing?.mode}
+        apps={apps}
+        onClose={() => setLinkEditing(null)}
+        onSave={saveLink}
+      />
+
+      <Alert
+        isOpen={appDeleting !== null}
+        className="bp6-dark"
+        intent="danger"
+        icon="trash"
+        confirmButtonText="Delete"
+        cancelButtonText="Cancel"
+        loading={deleteBusy}
+        onCancel={() => setAppDeleting(null)}
+        onConfirm={() =>
+          appDeleting && runDelete(() => onDelete(appDeleting), () => setAppDeleting(null))
+        }
+      >
+        <p>
+          Delete <strong>{appDeleting?.name}</strong>? This also removes every link
+          connected to it. This cannot be undone.
+        </p>
+        {deleteError && <p className="admin-delete-error">{deleteError}</p>}
+      </Alert>
+
+      <Alert
+        isOpen={catDeleting !== null}
+        className="bp6-dark"
+        intent="danger"
+        icon="trash"
+        confirmButtonText="Delete"
+        cancelButtonText="Cancel"
+        loading={deleteBusy}
+        onCancel={() => setCatDeleting(null)}
+        onConfirm={() =>
+          catDeleting && runDelete(() => onDeleteCategory(catDeleting), () => setCatDeleting(null))
+        }
+      >
+        <p>
+          Delete category <strong>{catDeleting?.name}</strong>? This cannot be undone.
+        </p>
+        {deleteError && <p className="admin-delete-error">{deleteError}</p>}
+      </Alert>
+
+      <Alert
+        isOpen={linkDeleting !== null}
+        className="bp6-dark"
+        intent="danger"
+        icon="trash"
+        confirmButtonText="Delete"
+        cancelButtonText="Cancel"
+        loading={deleteBusy}
+        onCancel={() => setLinkDeleting(null)}
+        onConfirm={() =>
+          linkDeleting && runDelete(() => onDeleteLink(linkDeleting), () => setLinkDeleting(null))
+        }
+      >
+        <p>
+          Delete the link{' '}
+          <strong>
+            {linkDeleting && `${nameOf(linkDeleting.source_id)} → ${nameOf(linkDeleting.target_id)}`}
+          </strong>
+          ? This cannot be undone.
+        </p>
+        {deleteError && <p className="admin-delete-error">{deleteError}</p>}
+      </Alert>
+    </div>
+  );
+}

@@ -1,0 +1,16 @@
+{
+  "name": "foundry-map-server",
+  "private": true,
+  "type": "module",
+  "description": "API server for the Foundry Atlas — public reads, admin-token-gated writes.",
+  "scripts": {
+    "seed": "node --env-file-if-exists=.env seed.mjs",
+    "start": "node --env-file-if-exists=.env index.mjs",
+    "dev": "node --env-file-if-exists=.env --watch index.mjs"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "pg": "^8.13.1"
+  }
+}
