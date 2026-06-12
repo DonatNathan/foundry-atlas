@@ -3,9 +3,13 @@
   "private": true,
   "description": "Foundry Atlas — an interactive map of Palantir Foundry applications",
   "scripts": {
-    "db": "node database/build.mjs",
-    "dev": "npm --prefix frontend run dev",
-    "build": "node database/build.mjs && npm --prefix frontend run build",
-    "preview": "npm --prefix frontend run preview"
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "npm --prefix frontend run dev",
+    "dev:server": "npm --prefix server run dev",
+    "server": "npm --prefix server start",
+    "seed": "npm --prefix server run seed",
+    "build": "npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview",
+    "db:sqlite": "node database/build.mjs"
   }
 }

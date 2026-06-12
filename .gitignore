@@ -1,0 +1,13 @@
+# dependencies
+node_modules/
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# build output
+frontend/dist/
+
+# logs
+*.log

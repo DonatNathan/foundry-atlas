@@ -538,6 +538,44 @@ h4 {
   flex: 1;
 }
 
+/* admin unlock control */
+.admin-control {
+  position: absolute;
+  z-index: 45;
+  bottom: 14px;
+  right: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+}
+
+.admin-control:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.admin-control.unlocked {
+  color: #fff;
+  background: #238551;
+  border-color: #238551;
+}
+
+.admin-hint {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
 .table-scroll::-webkit-scrollbar {
   width: 8px;
   height: 8px;

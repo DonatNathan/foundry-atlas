@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Button,
+  Callout,
   Checkbox,
   Dialog,
   DialogBody,
@@ -17,7 +18,7 @@ import { categories, STATUS_LABELS, TIER_LABELS } from '../data';
 interface EditAppDialogProps {
   app: Application | null;
   onClose: () => void;
-  onSave: (app: Application) => void;
+  onSave: (app: Application) => Promise<void>;
 }
 
 const TIERS: Tier[] = ['beginner', 'intermediate', 'advanced'];
@@ -25,18 +26,31 @@ const STATUSES: Status[] = ['stable', 'new', 'legacy'];
 
 export default function EditAppDialog({ app, onClose, onSave }: EditAppDialogProps) {
   const [draft, setDraft] = useState<Application | null>(app);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Reset the form whenever a different app is opened.
-  useEffect(() => setDraft(app), [app]);
+  useEffect(() => {
+    setDraft(app);
+    setError(null);
+  }, [app]);
 
   if (!draft) return null;
 
   const set = <K extends keyof Application>(key: K, value: Application[K]) =>
     setDraft((d) => (d ? { ...d, [key]: value } : d));
 
-  const submit = () => {
+  const submit = async () => {
     if (!draft.name.trim()) return;
-    onSave({ ...draft, name: draft.name.trim() });
+    setSaving(true);
+    setError(null);
+    try {
+      await onSave({ ...draft, name: draft.name.trim() });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Save failed.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -158,12 +172,18 @@ export default function EditAppDialog({ app, onClose, onSave }: EditAppDialogPro
             onChange={(e) => set('docs_url', e.target.value || null)}
           />
         </FormGroup>
+
+        {error && (
+          <Callout intent="danger" compact>
+            {error}
+          </Callout>
+        )}
       </DialogBody>
       <DialogFooter
         actions={
           <>
-            <Button text="Cancel" onClick={onClose} />
-            <Button text="Save changes" intent="primary" onClick={submit} />
+            <Button text="Cancel" onClick={onClose} disabled={saving} />
+            <Button text="Save changes" intent="primary" loading={saving} onClick={submit} />
           </>
         }
       />

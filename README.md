@@ -5,36 +5,86 @@ application as a node, every meaningful relationship between them as a typed lin
 Built for both beginners ("where do I start?") and experienced engineers ("how does
 X relate to Y?").
 
-![Tech](https://img.shields.io/badge/stack-React%20%2B%20TypeScript%20%2B%20SQLite-blue)
+![Tech](https://img.shields.io/badge/stack-React%20%2B%20TypeScript%20%2B%20PostgreSQL-blue)
 
 ## What's inside
 
 ```
-database/            Source of truth
+server/              Node API — public reads, admin-token-gated writes (PostgreSQL)
 ├── schema.sql       Tables: category, application, application_link
-├── seed.sql         35 curated Foundry applications + 62 typed links
-├── build.mjs        Builds foundry.db and exports the graph JSON (Node ≥ 22, no deps)
-└── foundry.db       Generated SQLite database
+├── seed.mjs         Seeds Postgres from frontend/src/data/graph.json
+├── db.mjs           pg connection pool (uses DATABASE_URL)
+├── index.mjs        Express server: GET /api/graph, PUT /api/applications/:id
+└── .env.example     DATABASE_URL, ADMIN_TOKEN, PORT
 
 frontend/            Vite + React 19 + TypeScript
 └── src/
-    ├── data/graph.json          Generated from the database — do not edit by hand
+    ├── data/graph.json          Bundled snapshot — instant render + the seed source
+    ├── api.ts                   Talks to the backend
     ├── components/GraphView.tsx Force-directed canvas (react-force-graph-2d)
+    ├── components/TableView.tsx Sortable/filterable table + per-row edit
     ├── components/Sidebar.tsx   Search, filters, legend, learning path
-    └── components/DetailPanel.tsx  Per-application deep dive
+    ├── components/DetailPanel.tsx   Per-application deep dive
+    ├── components/EditAppDialog.tsx Admin-only edit overlay
+    └── components/AdminControls.tsx Token unlock/lock
+
+database/            ⚠️ Legacy local SQLite pipeline (superseded by server/).
+                     Kept for reference; `npm run db:sqlite` still regenerates
+                     graph.json from seed.sql, but Postgres is now the source of truth.
 ```
 
-## Quick start
+## Data, access & editing
+
+- **The community gets read-only access.** Anyone can load the map and browse the
+  data; the read API (`GET /api/graph`) is public.
+- **Editing is gated to the admin** via a shared secret (`ADMIN_TOKEN`). The backend
+  requires it for every write (`PUT /api/applications/:id`), compared in constant
+  time. In the UI, click **Admin** (bottom-right), paste the token, and per-row edit
+  pencils appear in the table. Without it, the edit affordances aren't even rendered.
+- **PostgreSQL is the source of truth.** Edits persist to the database and survive
+  reloads. The bundled `graph.json` is a build-time snapshot used for instant first
+  render and as the one-time seed; the app refreshes from the API on load.
+
+## Quick start (local)
+
+You need **Node ≥ 22** and a **PostgreSQL** database you can create tables in.
 
 ```bash
-# 1. Build the database and export the graph (Node 22+, uses built-in node:sqlite)
-cd database && node build.mjs
+# 1. Create a database
+createdb foundry_atlas
 
-# 2. Run the frontend
-cd ../frontend
+# 2. Configure the server
+cd server
+cp .env.example .env
+#   edit .env:
+#     DATABASE_URL=postgres://USER:PASSWORD@localhost:5432/foundry_atlas
+#     ADMIN_TOKEN=$(openssl rand -hex 32)   # your editing secret
 npm install
-npm run dev          # → http://localhost:5173
+npm run seed          # loads schema + the 64-app snapshot into Postgres
+
+# 3. Install the frontend
+cd ../frontend && npm install
+
+# 4. Run both together (from the repo root)
+cd .. && npm run dev  # API on :4000, web on http://localhost:5173 (proxies /api)
 ```
+
+`npm run dev` launches the API and the Vite dev server together. You can also run
+them separately with `npm run dev:server` and `npm run dev:web`.
+
+## Deploying (long-running Node server)
+
+```bash
+# Build the static frontend
+npm run build                 # → frontend/dist
+
+# Start the API; it serves frontend/dist when present (single origin, so /api just works)
+DATABASE_URL=...  ADMIN_TOKEN=...  PGSSL=require  npm run server
+```
+
+Run `npm run seed` once against the production database. Set `PGSSL=require` if your
+managed Postgres needs SSL. Keep `ADMIN_TOKEN` secret (env var only — never commit
+`.env`); rotate it by changing the value and restarting.
 
 ## The data model
 
@@ -44,7 +94,7 @@ Each **application** row records:
 | --- | --- |
 | `description` / `use_case` | What it is, and what you concretely use it for |
 | `tier` | `beginner` / `intermediate` / `advanced` |
-| `is_core` + `learning_order` | The recommended 12-step learning path for newcomers |
+| `is_core` + `learning_order` | The recommended learning path for newcomers |
 | `status` | `stable` (established), `new` (AIP era, 2023+), `legacy` (superseded) |
 | `era` | Free-text generation note, e.g. "Legacy — superseded by Workshop" |
 | `docs_url` | Link into Palantir's official documentation |
@@ -55,26 +105,20 @@ Each **application** row records:
 map can say things like *"Pipeline Builder feeds the Ontology"* or *"Workshop
 supersedes Slate"*.
 
-To add or correct an application, edit `database/seed.sql` and re-run
-`node build.mjs` — the frontend picks the new JSON up automatically.
-
 ## Features
 
+- **Two views** — an Obsidian-style force-directed graph and a sortable, filterable
+  table, switchable from the top tabs.
 - **Obsidian-style graph** — hover a node to light up its neighborhood, drag to
-  rearrange, scroll to zoom; node size reflects how connected an app is (the
-  Ontology Manager is visibly the center of gravity of the platform).
+  rearrange, scroll to zoom; node size reflects how connected an app is.
 - **Detail panel** — click any node for its description, use case, learning tip,
   docs link, and a clickable list of every connection with a human-readable verb.
-- **🎓 Learning path mode** — highlights the recommended 12-step beginner journey
-  (Projects & Files → Dataset Preview → Pipeline Builder → … → Data Lineage) with
+- **Table view** — sort by any column; filter by category, level, and generation;
+  search across name/description/use case; admins edit any row in a center overlay.
+- **🎓 Learning path mode** — highlights the recommended beginner journey with
   numbered badges on the map.
-- **Filters** — by category, experience level, and generation (established / newer
-  AIP-era / legacy). Legacy apps render with dashed rings; AIP-era apps get a bright
-  outer ring.
-- **Search** — by name, description, or use case, with fly-to on selection.
-- **Link tooltips** — hover an edge to see exactly how two apps relate.
-- **Palantir look & feel** — built with [Blueprint](https://blueprintjs.com/)
-  (Palantir's own open-source design system), dark theme, Blueprint color palette.
+- **Filters & search**, **link tooltips**, and a **Palantir look & feel** built with
+  [Blueprint](https://blueprintjs.com/), Palantir's own open-source design system.
 
 ## Notes
 
