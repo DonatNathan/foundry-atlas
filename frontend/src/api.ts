@@ -1,4 +1,4 @@
-import type { Application, Category, GraphPayload } from './types';
+import type { Application, AppLink, Category, GraphPayload } from './types';
 
 /** Fetch the full graph (categories, applications, links) from the backend. */
 export async function fetchGraph(): Promise<GraphPayload> {
@@ -106,6 +106,53 @@ export async function updateCategory(category: Category, token: string): Promise
 /** Delete a category (must be unused). Requires a valid admin token. */
 export async function deleteCategory(id: string, token: string): Promise<void> {
   const res = await fetch(`/api/categories/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Delete failed (${res.status})`);
+  }
+}
+
+const linkBody = (l: AppLink) => ({
+  source_id: l.source_id,
+  target_id: l.target_id,
+  relationship: l.relationship,
+  description: l.description,
+});
+
+async function readLink(res: Response, fallback: string): Promise<AppLink> {
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `${fallback} (${res.status})`);
+  }
+  return res.json();
+}
+
+/** Create a new link. Requires a valid admin token. */
+export async function createLink(link: AppLink, token: string): Promise<AppLink> {
+  const res = await fetch('/api/links', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify(linkBody(link)),
+  });
+  return readLink(res, 'Create failed');
+}
+
+/** Update a link by id. Requires a valid admin token. */
+export async function updateLink(link: AppLink, token: string): Promise<AppLink> {
+  const res = await fetch(`/api/links/${link.id}`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify(linkBody(link)),
+  });
+  return readLink(res, 'Save failed');
+}
+
+/** Delete a link by id. Requires a valid admin token. */
+export async function deleteLink(id: number, token: string): Promise<void> {
+  const res = await fetch(`/api/links/${id}`, {
     method: 'DELETE',
     headers: { authorization: `Bearer ${token}` },
   });

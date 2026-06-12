@@ -36,6 +36,8 @@ export interface Application {
 }
 
 export interface AppLink {
+  /** Stable row id from the API (absent in the bundled snapshot). */
+  id?: number;
   source_id: string;
   target_id: string;
   relationship: Relationship;

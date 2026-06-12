@@ -7,17 +7,20 @@ import TableView from './components/TableView';
 import AdminView from './components/AdminView';
 import AdminControls from './components/AdminControls';
 import { DataProvider } from './DataContext';
-import { applications, categories as seedCategories, links } from './data';
+import { applications, categories as seedCategories, links as seedLinks } from './data';
 import {
   createApplication,
   createCategory,
+  createLink,
   deleteApplication,
   deleteCategory,
+  deleteLink,
   fetchGraph,
   updateApplication,
   updateCategory,
+  updateLink,
 } from './api';
-import type { Application, Category, Filters, Status, Tier } from './types';
+import type { Application, AppLink, Category, Filters, Status, Tier } from './types';
 
 type View = 'map' | 'table' | 'admin';
 
@@ -32,6 +35,7 @@ export default function App() {
   // Seed from the bundled snapshot for instant render, then refresh from the API.
   const [apps, setApps] = useState<Application[]>(applications);
   const [categories, setCategories] = useState<Category[]>(seedCategories);
+  const [links, setLinks] = useState<AppLink[]>(seedLinks);
   const [adminToken, setAdminToken] = useState<string | null>(
     () => localStorage.getItem(TOKEN_KEY)
   );
@@ -49,6 +53,7 @@ export default function App() {
       .then((g) => {
         setApps(g.applications);
         setCategories(g.categories);
+        setLinks(g.links);
       })
       .catch((e) => console.warn('Falling back to bundled data:', e));
   }, []);
@@ -108,6 +113,8 @@ export default function App() {
   const handleDelete = async (app: Application) => {
     await deleteApplication(app.id, requireToken());
     setApps((prev) => prev.filter((a) => a.id !== app.id));
+    // The backend cascades link deletion, so drop them locally too.
+    setLinks((prev) => prev.filter((l) => l.source_id !== app.id && l.target_id !== app.id));
     if (selectedId === app.id) setSelectedId(null);
   };
 
@@ -126,6 +133,22 @@ export default function App() {
     setCategories((prev) => prev.filter((x) => x.id !== c.id));
   };
 
+  const handleCreateLink = async (l: AppLink) => {
+    const saved = await createLink(l, requireToken());
+    setLinks((prev) => [...prev, saved]);
+  };
+
+  const handleUpdateLink = async (l: AppLink) => {
+    const saved = await updateLink(l, requireToken());
+    setLinks((prev) => prev.map((x) => (x.id === saved.id ? saved : x)));
+  };
+
+  const handleDeleteLink = async (l: AppLink) => {
+    if (l.id == null) throw new Error('This link has no id and cannot be deleted.');
+    await deleteLink(l.id, requireToken());
+    setLinks((prev) => prev.filter((x) => x.id !== l.id));
+  };
+
   const handleUnlock = (token: string) => {
     localStorage.setItem(TOKEN_KEY, token);
     setAdminToken(token);
@@ -138,7 +161,7 @@ export default function App() {
   };
 
   return (
-    <DataProvider categories={categories}>
+    <DataProvider categories={categories} links={links}>
       <div className="app bp6-dark">
         <div className="top-bar">
           <div className="view-tabs">
@@ -166,7 +189,6 @@ export default function App() {
         {activeView === 'map' && (
           <GraphView
             apps={visibleApps}
-            links={links}
             selectedId={selectedId}
             learningPathMode={filters.learningPath}
             onSelect={setSelectedId}
@@ -184,6 +206,9 @@ export default function App() {
             onCreateCategory={handleCreateCategory}
             onUpdateCategory={handleUpdateCategory}
             onDeleteCategory={handleDeleteCategory}
+            onCreateLink={handleCreateLink}
+            onUpdateLink={handleUpdateLink}
+            onDeleteLink={handleDeleteLink}
           />
         )}
 

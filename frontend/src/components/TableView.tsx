@@ -11,7 +11,7 @@ import {
   Tag,
 } from '@blueprintjs/core';
 import type { Application, Status, Tier } from '../types';
-import { degreeOf, STATUS_LABELS, TIER_LABELS } from '../data';
+import { STATUS_LABELS, TIER_LABELS } from '../data';
 import { useData } from '../DataContext';
 
 interface TableViewProps {
@@ -40,7 +40,7 @@ const statusIntent = (s: Application['status']) =>
   s === 'new' ? 'primary' : s === 'legacy' ? 'danger' : 'none';
 
 export default function TableView({ apps, selectedId, onSelect }: TableViewProps) {
-  const { categories, categoryById, colorOf } = useData();
+  const { categories, categoryById, colorOf, degreeOf } = useData();
   const [query, setQuery] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
@@ -93,7 +93,7 @@ export default function TableView({ apps, selectedId, onSelect }: TableViewProps
     const sorted = [...filtered].sort(cmp);
     if (sortDir === 'desc') sorted.reverse();
     return sorted;
-  }, [apps, query, sortKey, sortDir, categoryFilter, tierFilter, statusFilter, categoryById]);
+  }, [apps, query, sortKey, sortDir, categoryFilter, tierFilter, statusFilter, categoryById, degreeOf]);
 
   const sortLabel = (key: SortKey, label: string) => (
     <span className="th-inner" onClick={() => toggleSort(key)}>

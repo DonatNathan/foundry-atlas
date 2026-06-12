@@ -60,7 +60,7 @@ app.get('/api/graph', async (_req, res, next) => {
          FROM application ORDER BY category_id, name`
       ),
       query(
-        'SELECT source_id, target_id, relationship, description FROM application_link'
+        'SELECT id, source_id, target_id, relationship, description FROM application_link ORDER BY id'
       ),
     ]);
     res.json({
@@ -263,6 +263,86 @@ app.delete('/api/categories/:id', requireAdmin, async (req, res, next) => {
     const del = await query('DELETE FROM category WHERE id = $1', [id]);
     if (del.rowCount === 0) {
       return res.status(404).json({ error: `Category not found: ${id}` });
+    }
+    res.json({ id });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---- links (admin only) ----------------------------------------------------
+
+const RELATIONSHIPS = new Set([
+  'feeds', 'powers', 'builds-on', 'embeds-in', 'monitors',
+  'supersedes', 'complements', 'packages', 'governs', 'assists',
+]);
+
+const validateLink = (b) => {
+  if (!b.source_id || !b.target_id) return 'source_id and target_id are required.';
+  if (b.source_id === b.target_id) return 'A link cannot connect an application to itself.';
+  if (!RELATIONSHIPS.has(b.relationship)) return `Invalid relationship: ${b.relationship}`;
+  return null;
+};
+
+app.post('/api/links', requireAdmin, async (req, res, next) => {
+  try {
+    const b = req.body ?? {};
+    const invalid = validateLink(b);
+    if (invalid) return res.status(400).json({ error: invalid });
+    const result = await query(
+      `INSERT INTO application_link (source_id, target_id, relationship, description)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, source_id, target_id, relationship, description`,
+      [b.source_id, b.target_id, b.relationship, b.description ?? null]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    if (err.code === '23505') {
+      return res.status(409).json({ error: 'That exact link already exists.' });
+    }
+    if (err.code === '23503') {
+      return res.status(400).json({ error: 'source_id or target_id does not exist.' });
+    }
+    next(err);
+  }
+});
+
+app.put('/api/links/:id', requireAdmin, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid link id.' });
+    const b = req.body ?? {};
+    const invalid = validateLink(b);
+    if (invalid) return res.status(400).json({ error: invalid });
+    const result = await query(
+      `UPDATE application_link
+         SET source_id = $2, target_id = $3, relationship = $4, description = $5
+       WHERE id = $1
+       RETURNING id, source_id, target_id, relationship, description`,
+      [id, b.source_id, b.target_id, b.relationship, b.description ?? null]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: `Link not found: ${id}` });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    if (err.code === '23505') {
+      return res.status(409).json({ error: 'That exact link already exists.' });
+    }
+    if (err.code === '23503') {
+      return res.status(400).json({ error: 'source_id or target_id does not exist.' });
+    }
+    next(err);
+  }
+});
+
+app.delete('/api/links/:id', requireAdmin, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid link id.' });
+    const del = await query('DELETE FROM application_link WHERE id = $1', [id]);
+    if (del.rowCount === 0) {
+      return res.status(404).json({ error: `Link not found: ${id}` });
     }
     res.json({ id });
   } catch (err) {
