@@ -1,0 +1,3 @@
+# Cloudflare Pages: serve index.html for all routes so client-side routing
+# (e.g. shareable permalinks) works on direct hits / refresh.
+/*    /index.html   200

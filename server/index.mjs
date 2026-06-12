@@ -16,7 +16,17 @@ if (!ADMIN_TOKEN) {
 }
 
 const app = express();
-app.use(cors());
+
+// Restrict cross-origin requests to the configured frontend origin(s) in
+// production. CORS_ORIGIN is a comma-separated list, e.g.
+// "https://map.yourdomain.com". Unset = allow any origin (fine for local dev,
+// where the frontend is same-origin via the Vite proxy anyway).
+const allowedOrigins = (process.env.CORS_ORIGIN ?? '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+app.use(cors({ origin: allowedOrigins.length > 0 ? allowedOrigins : true }));
+
 app.use(express.json());
 
 // ---- helpers ---------------------------------------------------------------

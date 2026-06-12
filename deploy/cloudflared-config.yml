@@ -1,0 +1,21 @@
+# Cloudflare Tunnel config for the Foundry Atlas API.
+# Place at /etc/cloudflared/config.yml on the VPS.
+#
+# Setup (one-time):
+#   cloudflared tunnel login
+#   cloudflared tunnel create foundry-atlas        # prints a <TUNNEL_ID> + creds json
+#   cloudflared tunnel route dns foundry-atlas api.yourdomain.com
+# Then fill in the values below and run it as a service:
+#   sudo cloudflared service install
+#   sudo systemctl enable --now cloudflared
+
+tunnel: <TUNNEL_ID>
+credentials-file: /etc/cloudflared/<TUNNEL_ID>.json
+
+ingress:
+  # Public hostname -> local API. cloudflared terminates TLS at Cloudflare's
+  # edge, so the Node server only needs to listen on plain HTTP localhost.
+  - hostname: api.yourdomain.com
+    service: http://localhost:4000
+  # Required catch-all.
+  - service: http_status:404
