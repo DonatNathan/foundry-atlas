@@ -14,6 +14,7 @@ interface TableViewProps {
   apps: Application[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  onEdit: (id: string) => void;
 }
 
 type SortKey = 'name' | 'category' | 'tier' | 'status' | 'connections';
@@ -35,7 +36,7 @@ const tierIntent = (t: Application['tier']) =>
 const statusIntent = (s: Application['status']) =>
   s === 'new' ? 'primary' : s === 'legacy' ? 'danger' : 'none';
 
-export default function TableView({ apps, selectedId, onSelect }: TableViewProps) {
+export default function TableView({ apps, selectedId, onSelect, onEdit }: TableViewProps) {
   const [query, setQuery] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
@@ -171,6 +172,7 @@ export default function TableView({ apps, selectedId, onSelect }: TableViewProps
               {header('status', 'Generation')}
               {header('connections', 'Links')}
               <th>Description</th>
+              <th className="th-actions" aria-label="Actions" />
             </tr>
           </thead>
           <tbody>
@@ -206,6 +208,19 @@ export default function TableView({ apps, selectedId, onSelect }: TableViewProps
                   </td>
                   <td className="cell-num">{degreeOf(a.id)}</td>
                   <td className="cell-desc">{a.description}</td>
+                  <td className="cell-actions">
+                    <button
+                      className="row-edit"
+                      aria-label={`Edit ${a.name}`}
+                      title="Edit application"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(a.id);
+                      }}
+                    >
+                      <Icon icon="edit" size={14} />
+                    </button>
+                  </td>
                 </tr>
               );
             })}
