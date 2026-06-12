@@ -1,14 +1,7 @@
 import { AnchorButton, Button, Callout, Divider, Tag } from '@blueprintjs/core';
 import type { Application } from '../types';
-import {
-  appById,
-  categoryById,
-  colorOf,
-  links,
-  RELATIONSHIP_VERBS,
-  STATUS_LABELS,
-  TIER_LABELS,
-} from '../data';
+import { appById, links, RELATIONSHIP_VERBS, STATUS_LABELS, TIER_LABELS } from '../data';
+import { useData } from '../DataContext';
 
 interface DetailPanelProps {
   app: Application;
@@ -23,6 +16,7 @@ interface Connection {
 }
 
 export default function DetailPanel({ app, onSelect, onClose }: DetailPanelProps) {
+  const { categoryById, colorOf } = useData();
   const category = categoryById.get(app.category_id);
   const color = colorOf(app);
 

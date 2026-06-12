@@ -13,7 +13,8 @@ import {
   TextArea,
 } from '@blueprintjs/core';
 import type { Application, Status, Tier } from '../types';
-import { categories, STATUS_LABELS, TIER_LABELS } from '../data';
+import { STATUS_LABELS, TIER_LABELS } from '../data';
+import { useData } from '../DataContext';
 
 interface EditAppDialogProps {
   app: Application | null;
@@ -31,6 +32,7 @@ export default function EditAppDialog({
   onClose,
   onSave,
 }: EditAppDialogProps) {
+  const { categories } = useData();
   const [draft, setDraft] = useState<Application | null>(app);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);

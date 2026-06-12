@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '@blueprintjs/core';
 import GraphView from './components/GraphView';
 import DetailPanel from './components/DetailPanel';
@@ -6,15 +6,23 @@ import Sidebar from './components/Sidebar';
 import TableView from './components/TableView';
 import AdminView from './components/AdminView';
 import AdminControls from './components/AdminControls';
-import { applications, categories, links } from './data';
-import { createApplication, deleteApplication, fetchGraph, updateApplication } from './api';
-import type { Application, Filters, Status, Tier } from './types';
+import { DataProvider } from './DataContext';
+import { applications, categories as seedCategories, links } from './data';
+import {
+  createApplication,
+  createCategory,
+  deleteApplication,
+  deleteCategory,
+  fetchGraph,
+  updateApplication,
+  updateCategory,
+} from './api';
+import type { Application, Category, Filters, Status, Tier } from './types';
 
 type View = 'map' | 'table' | 'admin';
 
 const TOKEN_KEY = 'foundry-admin-token';
 
-const allCategories = () => new Set(categories.map((c) => c.id));
 const allTiers = () => new Set<Tier>(['beginner', 'intermediate', 'advanced']);
 const allStatuses = () => new Set<Status>(['stable', 'new', 'legacy']);
 
@@ -23,11 +31,12 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Seed from the bundled snapshot for instant render, then refresh from the API.
   const [apps, setApps] = useState<Application[]>(applications);
+  const [categories, setCategories] = useState<Category[]>(seedCategories);
   const [adminToken, setAdminToken] = useState<string | null>(
     () => localStorage.getItem(TOKEN_KEY)
   );
   const [filters, setFilters] = useState<Filters>({
-    categories: allCategories(),
+    categories: new Set(seedCategories.map((c) => c.id)),
     tiers: allTiers(),
     statuses: allStatuses(),
     coreOnly: false,
@@ -37,9 +46,30 @@ export default function App() {
   // Load the live data from the backend on mount (source of truth).
   useEffect(() => {
     fetchGraph()
-      .then((g) => setApps(g.applications))
+      .then((g) => {
+        setApps(g.applications);
+        setCategories(g.categories);
+      })
       .catch((e) => console.warn('Falling back to bundled data:', e));
   }, []);
+
+  // Keep the category filter coherent as categories are added/removed: new
+  // categories show by default, deleted ones drop out of the filter set.
+  const knownCategoryIds = useRef(new Set(seedCategories.map((c) => c.id)));
+  useEffect(() => {
+    const current = new Set(categories.map((c) => c.id));
+    const added = [...current].filter((id) => !knownCategoryIds.current.has(id));
+    const removed = [...knownCategoryIds.current].filter((id) => !current.has(id));
+    if (added.length || removed.length) {
+      setFilters((f) => {
+        const next = new Set(f.categories);
+        added.forEach((id) => next.add(id));
+        removed.forEach((id) => next.delete(id));
+        return { ...f, categories: next };
+      });
+    }
+    knownCategoryIds.current = current;
+  }, [categories]);
 
   const appById = useMemo(() => new Map(apps.map((a) => [a.id, a])), [apps]);
 
@@ -56,28 +86,44 @@ export default function App() {
   );
 
   const canEdit = adminToken !== null;
-  // The admin view is only reachable while unlocked.
   const activeView: View = view === 'admin' && !canEdit ? 'map' : view;
 
   const selectedApp = selectedId ? (appById.get(selectedId) ?? null) : null;
 
+  const requireToken = () => {
+    if (!adminToken) throw new Error('Not authorized.');
+    return adminToken;
+  };
+
   const handleUpdate = async (updated: Application) => {
-    if (!adminToken) throw new Error('Not authorized to edit.');
-    const saved = await updateApplication(updated, adminToken);
+    const saved = await updateApplication(updated, requireToken());
     setApps((prev) => prev.map((a) => (a.id === saved.id ? saved : a)));
   };
 
   const handleCreate = async (created: Application) => {
-    if (!adminToken) throw new Error('Not authorized to create.');
-    const saved = await createApplication(created, adminToken);
+    const saved = await createApplication(created, requireToken());
     setApps((prev) => [...prev, saved]);
   };
 
   const handleDelete = async (app: Application) => {
-    if (!adminToken) throw new Error('Not authorized to delete.');
-    await deleteApplication(app.id, adminToken);
+    await deleteApplication(app.id, requireToken());
     setApps((prev) => prev.filter((a) => a.id !== app.id));
     if (selectedId === app.id) setSelectedId(null);
+  };
+
+  const handleCreateCategory = async (c: Category) => {
+    const saved = await createCategory(c, requireToken());
+    setCategories((prev) => [...prev, saved]);
+  };
+
+  const handleUpdateCategory = async (c: Category) => {
+    const saved = await updateCategory(c, requireToken());
+    setCategories((prev) => prev.map((x) => (x.id === saved.id ? saved : x)));
+  };
+
+  const handleDeleteCategory = async (c: Category) => {
+    await deleteCategory(c.id, requireToken());
+    setCategories((prev) => prev.filter((x) => x.id !== c.id));
   };
 
   const handleUnlock = (token: string) => {
@@ -92,66 +138,71 @@ export default function App() {
   };
 
   return (
-    <div className="app bp6-dark">
-      <div className="top-bar">
-        <div className="view-tabs">
-          <button className={activeView === 'map' ? 'active' : ''} onClick={() => setView('map')}>
-            <Icon icon="graph" size={14} /> Map
-          </button>
-          <button
-            className={activeView === 'table' ? 'active' : ''}
-            onClick={() => setView('table')}
-          >
-            <Icon icon="th" size={14} /> Table
-          </button>
-          {canEdit && (
-            <button
-              className={activeView === 'admin' ? 'active' : ''}
-              onClick={() => setView('admin')}
-            >
-              <Icon icon="cog" size={14} /> Admin
+    <DataProvider categories={categories}>
+      <div className="app bp6-dark">
+        <div className="top-bar">
+          <div className="view-tabs">
+            <button className={activeView === 'map' ? 'active' : ''} onClick={() => setView('map')}>
+              <Icon icon="graph" size={14} /> Map
             </button>
-          )}
+            <button
+              className={activeView === 'table' ? 'active' : ''}
+              onClick={() => setView('table')}
+            >
+              <Icon icon="th" size={14} /> Table
+            </button>
+            {canEdit && (
+              <button
+                className={activeView === 'admin' ? 'active' : ''}
+                onClick={() => setView('admin')}
+              >
+                <Icon icon="cog" size={14} /> Admin
+              </button>
+            )}
+          </div>
+          <AdminControls unlocked={canEdit} onUnlock={handleUnlock} onLock={handleLock} />
         </div>
-        <AdminControls unlocked={canEdit} onUnlock={handleUnlock} onLock={handleLock} />
+
+        {activeView === 'map' && (
+          <GraphView
+            apps={visibleApps}
+            links={links}
+            selectedId={selectedId}
+            learningPathMode={filters.learningPath}
+            onSelect={setSelectedId}
+          />
+        )}
+        {activeView === 'table' && (
+          <TableView apps={apps} selectedId={selectedId} onSelect={setSelectedId} />
+        )}
+        {activeView === 'admin' && (
+          <AdminView
+            apps={apps}
+            onCreate={handleCreate}
+            onUpdate={handleUpdate}
+            onDelete={handleDelete}
+            onCreateCategory={handleCreateCategory}
+            onUpdateCategory={handleUpdateCategory}
+            onDeleteCategory={handleDeleteCategory}
+          />
+        )}
+
+        {activeView === 'map' && (
+          <Sidebar
+            filters={filters}
+            onFiltersChange={setFilters}
+            onSelect={setSelectedId}
+            visibleCount={visibleApps.length}
+          />
+        )}
+        {selectedApp && activeView !== 'admin' && (
+          <DetailPanel
+            app={selectedApp}
+            onSelect={setSelectedId}
+            onClose={() => setSelectedId(null)}
+          />
+        )}
       </div>
-
-      {activeView === 'map' && (
-        <GraphView
-          apps={visibleApps}
-          links={links}
-          selectedId={selectedId}
-          learningPathMode={filters.learningPath}
-          onSelect={setSelectedId}
-        />
-      )}
-      {activeView === 'table' && (
-        <TableView apps={apps} selectedId={selectedId} onSelect={setSelectedId} />
-      )}
-      {activeView === 'admin' && (
-        <AdminView
-          apps={apps}
-          onCreate={handleCreate}
-          onUpdate={handleUpdate}
-          onDelete={handleDelete}
-        />
-      )}
-
-      {activeView === 'map' && (
-        <Sidebar
-          filters={filters}
-          onFiltersChange={setFilters}
-          onSelect={setSelectedId}
-          visibleCount={visibleApps.length}
-        />
-      )}
-      {selectedApp && activeView !== 'admin' && (
-        <DetailPanel
-          app={selectedApp}
-          onSelect={setSelectedId}
-          onClose={() => setSelectedId(null)}
-        />
-      )}
-    </div>
+    </DataProvider>
   );
 }

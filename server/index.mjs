@@ -187,6 +187,89 @@ app.delete('/api/applications/:id', requireAdmin, async (req, res, next) => {
   }
 });
 
+// ---- categories (admin only) ----------------------------------------------
+
+const HEX = /^#[0-9a-fA-F]{6}$/;
+
+const validateCategory = (b, { partial = false } = {}) => {
+  if (!partial || b.name !== undefined) {
+    if (!b.name || String(b.name).trim() === '') return 'Name is required.';
+  }
+  if (!partial || b.color !== undefined) {
+    if (!HEX.test(String(b.color ?? ''))) return 'Color must be a hex value like #4C90F0.';
+  }
+  if (!partial || b.sort !== undefined) {
+    if (!Number.isInteger(b.sort)) return 'Sort must be an integer.';
+  }
+  return null;
+};
+
+app.post('/api/categories', requireAdmin, async (req, res, next) => {
+  try {
+    const b = req.body ?? {};
+    if (!KEBAB.test(b.id ?? '')) {
+      return res.status(400).json({ error: 'id must be kebab-case (lowercase letters, digits, hyphens).' });
+    }
+    const invalid = validateCategory(b);
+    if (invalid) return res.status(400).json({ error: invalid });
+
+    const result = await query(
+      'INSERT INTO category (id, name, color, sort) VALUES ($1, $2, $3, $4) RETURNING id, name, color, sort',
+      [b.id, b.name, b.color, b.sort]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    if (err.code === '23505') {
+      return res.status(409).json({ error: 'A category with that id already exists.' });
+    }
+    next(err);
+  }
+});
+
+app.put('/api/categories/:id', requireAdmin, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const b = req.body ?? {};
+    const invalid = validateCategory(b, { partial: true });
+    if (invalid) return res.status(400).json({ error: invalid });
+
+    const fields = ['name', 'color', 'sort'].filter((k) => k in b);
+    if (fields.length === 0) {
+      return res.status(400).json({ error: 'No editable fields provided.' });
+    }
+    const set = fields.map((k, i) => `${k} = $${i + 2}`).join(', ');
+    const result = await query(
+      `UPDATE category SET ${set} WHERE id = $1 RETURNING id, name, color, sort`,
+      [id, ...fields.map((k) => b[k])]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: `Category not found: ${id}` });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.delete('/api/categories/:id', requireAdmin, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const inUse = await query('SELECT count(*)::int AS n FROM application WHERE category_id = $1', [id]);
+    if (inUse.rows[0].n > 0) {
+      return res.status(409).json({
+        error: `Cannot delete: ${inUse.rows[0].n} application(s) still use this category. Reassign them first.`,
+      });
+    }
+    const del = await query('DELETE FROM category WHERE id = $1', [id]);
+    if (del.rowCount === 0) {
+      return res.status(404).json({ error: `Category not found: ${id}` });
+    }
+    res.json({ id });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ---- static frontend (production) ------------------------------------------
 
 const dist = join(here, '..', 'frontend', 'dist');

@@ -1,15 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Button, Checkbox, InputGroup, Switch, Tag } from '@blueprintjs/core';
 import type { Application, Filters, Status, Tier } from '../types';
-import {
-  applications,
-  categories,
-  colorOf,
-  learningPath,
-  links,
-  STATUS_LABELS,
-  TIER_LABELS,
-} from '../data';
+import { applications, learningPath, links, STATUS_LABELS, TIER_LABELS } from '../data';
+import { useData } from '../DataContext';
 
 interface SidebarProps {
   filters: Filters;
@@ -27,6 +20,7 @@ export default function Sidebar({
   onSelect,
   visibleCount,
 }: SidebarProps) {
+  const { categories, colorOf } = useData();
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState(false);
 

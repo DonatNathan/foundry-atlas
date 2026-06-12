@@ -6,7 +6,8 @@ import ForceGraph2D, {
 } from 'react-force-graph-2d';
 import { forceCollide } from 'd3-force';
 import type { Application, AppLink, Relationship } from '../types';
-import { colorOf, degreeOf, neighbors, RELATIONSHIP_VERBS } from '../data';
+import { degreeOf, neighbors, RELATIONSHIP_VERBS } from '../data';
+import { useData } from '../DataContext';
 
 interface NodeExtra {
   app: Application;
@@ -64,6 +65,7 @@ export default function GraphView({
   learningPathMode,
   onSelect,
 }: GraphViewProps) {
+  const { colorOf } = useData();
   const fgRef = useRef<ForceGraphMethods<GNode, GLink> | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight });
@@ -108,7 +110,7 @@ export default function GraphView({
         desc: l.description,
       }));
     return { nodes, links: visibleLinks };
-  }, [apps, links]);
+  }, [apps, links, colorOf]);
 
   // Tune forces for an airy, Obsidian-like layout. The collision force keeps
   // nodes far enough apart that their enlarged hit areas (and labels) don't

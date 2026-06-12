@@ -615,6 +615,55 @@ h4 {
   gap: 10px;
 }
 
+.admin-sections {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 12px;
+  padding: 3px;
+  align-self: flex-start;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+}
+
+.admin-sections button {
+  padding: 5px 16px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.admin-sections button:hover {
+  background: rgba(76, 144, 240, 0.12);
+  color: var(--text);
+}
+
+.admin-sections button.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.color-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-field input[type='color'] {
+  width: 34px;
+  height: 30px;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+
 .admin-scroll {
   flex: 1;
   overflow: auto;
