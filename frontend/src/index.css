@@ -578,6 +578,97 @@ h4 {
   flex: 1;
 }
 
+/* ---------- admin view ---------- */
+
+.admin-view {
+  position: absolute;
+  z-index: 10;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 70px 64px 24px;
+}
+
+.admin-view-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.admin-view-bar h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.admin-view-sub {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.admin-view-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-scroll {
+  flex: 1;
+  overflow: auto;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.admin-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.admin-scroll::-webkit-scrollbar-thumb {
+  background: #383e47;
+  border-radius: 4px;
+}
+
+.admin-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #1c2127;
+  box-shadow: inset 0 -1px 0 var(--panel-border);
+  white-space: nowrap;
+}
+
+.admin-table .cell-actions {
+  width: 72px;
+  white-space: nowrap;
+}
+
+/* In the admin table the action buttons are always visible. */
+.admin-table .row-edit {
+  opacity: 1;
+}
+
+.cell-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.row-delete:hover {
+  background: rgba(205, 66, 70, 0.18) !important;
+  color: #ff7373 !important;
+}
+
+.admin-delete-error {
+  margin: 8px 0 0;
+  color: #ff7373;
+  font-size: 12px;
+}
+
 /* admin unlock control */
 .admin-control {
   display: inline-flex;
@@ -711,8 +802,17 @@ h4 {
   }
 
   /* Tighter table padding and a wrapping toolbar on small screens. */
-  .table-view {
+  .table-view,
+  .admin-view {
     padding: 70px 14px 14px;
+  }
+
+  .admin-view-bar {
+    flex-wrap: wrap;
+  }
+
+  .admin-view-actions {
+    flex: 1 1 100%;
   }
 
   .table-toolbar {

@@ -17,6 +17,7 @@ import { categories, STATUS_LABELS, TIER_LABELS } from '../data';
 
 interface EditAppDialogProps {
   app: Application | null;
+  mode?: 'create' | 'edit';
   onClose: () => void;
   onSave: (app: Application) => Promise<void>;
 }
@@ -24,7 +25,12 @@ interface EditAppDialogProps {
 const TIERS: Tier[] = ['beginner', 'intermediate', 'advanced'];
 const STATUSES: Status[] = ['stable', 'new', 'legacy'];
 
-export default function EditAppDialog({ app, onClose, onSave }: EditAppDialogProps) {
+export default function EditAppDialog({
+  app,
+  mode = 'edit',
+  onClose,
+  onSave,
+}: EditAppDialogProps) {
   const [draft, setDraft] = useState<Application | null>(app);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,15 +43,21 @@ export default function EditAppDialog({ app, onClose, onSave }: EditAppDialogPro
 
   if (!draft) return null;
 
+  const isCreate = mode === 'create';
+
   const set = <K extends keyof Application>(key: K, value: Application[K]) =>
     setDraft((d) => (d ? { ...d, [key]: value } : d));
 
   const submit = async () => {
     if (!draft.name.trim()) return;
+    if (isCreate && !draft.id.trim()) {
+      setError('ID is required.');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
-      await onSave({ ...draft, name: draft.name.trim() });
+      await onSave({ ...draft, id: draft.id.trim(), name: draft.name.trim() });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Save failed.');
     } finally {
@@ -57,16 +69,27 @@ export default function EditAppDialog({ app, onClose, onSave }: EditAppDialogPro
     <Dialog
       isOpen={app !== null}
       onClose={onClose}
-      title={`Edit · ${app?.name ?? ''}`}
-      icon="edit"
+      title={isCreate ? 'New application' : `Edit · ${app?.name ?? ''}`}
+      icon={isCreate ? 'add' : 'edit'}
       className="bp6-dark edit-dialog"
     >
       <DialogBody>
+        {isCreate && (
+          <FormGroup label="ID" labelInfo="(required, kebab-case)">
+            <InputGroup
+              value={draft.id}
+              placeholder="e.g. pipeline-builder"
+              onChange={(e) => set('id', e.target.value)}
+              autoFocus
+            />
+          </FormGroup>
+        )}
+
         <FormGroup label="Name" labelInfo="(required)">
           <InputGroup
             value={draft.name}
             onChange={(e) => set('name', e.target.value)}
-            autoFocus
+            autoFocus={!isCreate}
           />
         </FormGroup>
 
@@ -183,7 +206,12 @@ export default function EditAppDialog({ app, onClose, onSave }: EditAppDialogPro
         actions={
           <>
             <Button text="Cancel" onClick={onClose} disabled={saving} />
-            <Button text="Save changes" intent="primary" loading={saving} onClick={submit} />
+            <Button
+              text={isCreate ? 'Create' : 'Save changes'}
+              intent="primary"
+              loading={saving}
+              onClick={submit}
+            />
           </>
         }
       />

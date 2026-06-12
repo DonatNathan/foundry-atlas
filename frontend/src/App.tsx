@@ -4,13 +4,13 @@ import GraphView from './components/GraphView';
 import DetailPanel from './components/DetailPanel';
 import Sidebar from './components/Sidebar';
 import TableView from './components/TableView';
-import EditAppDialog from './components/EditAppDialog';
+import AdminView from './components/AdminView';
 import AdminControls from './components/AdminControls';
 import { applications, categories, links } from './data';
-import { fetchGraph, updateApplication } from './api';
+import { createApplication, deleteApplication, fetchGraph, updateApplication } from './api';
 import type { Application, Filters, Status, Tier } from './types';
 
-type View = 'map' | 'table';
+type View = 'map' | 'table' | 'admin';
 
 const TOKEN_KEY = 'foundry-admin-token';
 
@@ -21,7 +21,6 @@ const allStatuses = () => new Set<Status>(['stable', 'new', 'legacy']);
 export default function App() {
   const [view, setView] = useState<View>('map');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
   // Seed from the bundled snapshot for instant render, then refresh from the API.
   const [apps, setApps] = useState<Application[]>(applications);
   const [adminToken, setAdminToken] = useState<string | null>(
@@ -56,16 +55,29 @@ export default function App() {
     [apps, filters]
   );
 
-  const selectedApp = selectedId ? (appById.get(selectedId) ?? null) : null;
-  const editingApp = editingId ? (appById.get(editingId) ?? null) : null;
-
   const canEdit = adminToken !== null;
+  // The admin view is only reachable while unlocked.
+  const activeView: View = view === 'admin' && !canEdit ? 'map' : view;
 
-  const handleSave = async (updated: Application) => {
+  const selectedApp = selectedId ? (appById.get(selectedId) ?? null) : null;
+
+  const handleUpdate = async (updated: Application) => {
     if (!adminToken) throw new Error('Not authorized to edit.');
     const saved = await updateApplication(updated, adminToken);
     setApps((prev) => prev.map((a) => (a.id === saved.id ? saved : a)));
-    setEditingId(null);
+  };
+
+  const handleCreate = async (created: Application) => {
+    if (!adminToken) throw new Error('Not authorized to create.');
+    const saved = await createApplication(created, adminToken);
+    setApps((prev) => [...prev, saved]);
+  };
+
+  const handleDelete = async (app: Application) => {
+    if (!adminToken) throw new Error('Not authorized to delete.');
+    await deleteApplication(app.id, adminToken);
+    setApps((prev) => prev.filter((a) => a.id !== app.id));
+    if (selectedId === app.id) setSelectedId(null);
   };
 
   const handleUnlock = (token: string) => {
@@ -76,30 +88,35 @@ export default function App() {
   const handleLock = () => {
     localStorage.removeItem(TOKEN_KEY);
     setAdminToken(null);
-    setEditingId(null);
+    if (view === 'admin') setView('map');
   };
 
   return (
     <div className="app bp6-dark">
       <div className="top-bar">
         <div className="view-tabs">
-          <button
-            className={view === 'map' ? 'active' : ''}
-            onClick={() => setView('map')}
-          >
+          <button className={activeView === 'map' ? 'active' : ''} onClick={() => setView('map')}>
             <Icon icon="graph" size={14} /> Map
           </button>
           <button
-            className={view === 'table' ? 'active' : ''}
+            className={activeView === 'table' ? 'active' : ''}
             onClick={() => setView('table')}
           >
             <Icon icon="th" size={14} /> Table
           </button>
+          {canEdit && (
+            <button
+              className={activeView === 'admin' ? 'active' : ''}
+              onClick={() => setView('admin')}
+            >
+              <Icon icon="cog" size={14} /> Admin
+            </button>
+          )}
         </div>
         <AdminControls unlocked={canEdit} onUnlock={handleUnlock} onLock={handleLock} />
       </div>
 
-      {view === 'map' ? (
+      {activeView === 'map' && (
         <GraphView
           apps={visibleApps}
           links={links}
@@ -107,17 +124,20 @@ export default function App() {
           learningPathMode={filters.learningPath}
           onSelect={setSelectedId}
         />
-      ) : (
-        <TableView
+      )}
+      {activeView === 'table' && (
+        <TableView apps={apps} selectedId={selectedId} onSelect={setSelectedId} />
+      )}
+      {activeView === 'admin' && (
+        <AdminView
           apps={apps}
-          selectedId={selectedId}
-          canEdit={canEdit}
-          onSelect={setSelectedId}
-          onEdit={setEditingId}
+          onCreate={handleCreate}
+          onUpdate={handleUpdate}
+          onDelete={handleDelete}
         />
       )}
 
-      {view === 'map' && (
+      {activeView === 'map' && (
         <Sidebar
           filters={filters}
           onFiltersChange={setFilters}
@@ -125,14 +145,13 @@ export default function App() {
           visibleCount={visibleApps.length}
         />
       )}
-      {selectedApp && (
+      {selectedApp && activeView !== 'admin' && (
         <DetailPanel
           app={selectedApp}
           onSelect={setSelectedId}
           onClose={() => setSelectedId(null)}
         />
       )}
-      <EditAppDialog app={editingApp} onClose={() => setEditingId(null)} onSave={handleSave} />
     </div>
   );
 }

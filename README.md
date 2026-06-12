@@ -14,7 +14,7 @@ server/              Node API — public reads, admin-token-gated writes (Postgr
 ├── schema.sql       Tables: category, application, application_link
 ├── seed.mjs         Seeds Postgres from frontend/src/data/graph.json
 ├── db.mjs           pg connection pool (uses DATABASE_URL)
-├── index.mjs        Express server: GET /api/graph, PUT /api/applications/:id
+├── index.mjs        Express: GET /api/graph (public), POST/PUT/DELETE /api/applications (admin)
 └── .env.example     DATABASE_URL, ADMIN_TOKEN, PORT
 
 frontend/            Vite + React 19 + TypeScript
@@ -22,10 +22,11 @@ frontend/            Vite + React 19 + TypeScript
     ├── data/graph.json          Bundled snapshot — instant render + the seed source
     ├── api.ts                   Talks to the backend
     ├── components/GraphView.tsx Force-directed canvas (react-force-graph-2d)
-    ├── components/TableView.tsx Sortable/filterable table + per-row edit
+    ├── components/TableView.tsx Sortable/filterable read-only table
+    ├── components/AdminView.tsx Admin-only CRUD tab (create/edit/delete)
     ├── components/Sidebar.tsx   Search, filters, legend, learning path
     ├── components/DetailPanel.tsx   Per-application deep dive
-    ├── components/EditAppDialog.tsx Admin-only edit overlay
+    ├── components/EditAppDialog.tsx Create/edit overlay
     └── components/AdminControls.tsx Token unlock/lock
 
 database/            ⚠️ Legacy local SQLite pipeline (superseded by server/).
@@ -38,9 +39,10 @@ database/            ⚠️ Legacy local SQLite pipeline (superseded by server/)
 - **The community gets read-only access.** Anyone can load the map and browse the
   data; the read API (`GET /api/graph`) is public.
 - **Editing is gated to the admin** via a shared secret (`ADMIN_TOKEN`). The backend
-  requires it for every write (`PUT /api/applications/:id`), compared in constant
-  time. In the UI, click **Admin** (bottom-right), paste the token, and per-row edit
-  pencils appear in the table. Without it, the edit affordances aren't even rendered.
+  requires it for every write — `POST`/`PUT`/`DELETE /api/applications[/:id]` — compared
+  in constant time. In the UI, click **Admin** (top bar), paste the token, and an
+  extra **Admin** tab appears with a full CRUD table (create, edit, delete). Without
+  the token the tab isn't rendered and the write endpoints reject the request.
 - **PostgreSQL is the source of truth.** Edits persist to the database and survive
   reloads. The bundled `graph.json` is a build-time snapshot used for instant first
   render and as the one-time seed; the app refreshes from the API on load.

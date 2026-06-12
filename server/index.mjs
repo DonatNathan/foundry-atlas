@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
-import { query } from './db.mjs';
+import { pool, query } from './db.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT ?? 4000;
@@ -118,6 +118,72 @@ app.put('/api/applications/:id', requireAdmin, async (req, res, next) => {
       return res.status(400).json({ error: err.detail ?? err.message });
     }
     next(err);
+  }
+});
+
+const REQUIRED = ['id', 'name', 'category_id', 'description', 'use_case', 'tier', 'status'];
+const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+app.post('/api/applications', requireAdmin, async (req, res, next) => {
+  try {
+    const b = req.body ?? {};
+    const missing = REQUIRED.filter((k) => b[k] === undefined || String(b[k]).trim() === '');
+    if (missing.length > 0) {
+      return res.status(400).json({ error: `Missing required field(s): ${missing.join(', ')}` });
+    }
+    if (!KEBAB.test(b.id)) {
+      return res.status(400).json({ error: 'id must be kebab-case (lowercase letters, digits, hyphens).' });
+    }
+    if (!TIERS.has(b.tier)) return res.status(400).json({ error: `Invalid tier: ${b.tier}` });
+    if (!STATUSES.has(b.status)) return res.status(400).json({ error: `Invalid status: ${b.status}` });
+
+    const result = await query(
+      `INSERT INTO application
+         (id, name, category_id, description, use_case, tier, is_core,
+          learning_order, status, era, docs_url, tips)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+       RETURNING id, name, category_id, description, use_case, tier, is_core,
+                 learning_order, status, era, docs_url, tips`,
+      [
+        b.id, b.name, b.category_id, b.description, b.use_case, b.tier,
+        b.is_core ?? false, b.learning_order ?? null, b.status,
+        b.era ?? null, b.docs_url ?? null, b.tips ?? null,
+      ]
+    );
+    res.status(201).json(rowToApp(result.rows[0]));
+  } catch (err) {
+    if (err.code === '23505') {
+      return res.status(409).json({ error: 'An application with that id already exists.' });
+    }
+    if (err.code === '23503' || err.code === '23514') {
+      return res.status(400).json({ error: err.detail ?? err.message });
+    }
+    next(err);
+  }
+});
+
+// Deleting an application also removes any links touching it (transactional).
+app.delete('/api/applications/:id', requireAdmin, async (req, res, next) => {
+  const client = await pool.connect();
+  try {
+    const { id } = req.params;
+    await client.query('BEGIN');
+    const links = await client.query(
+      'DELETE FROM application_link WHERE source_id = $1 OR target_id = $1',
+      [id]
+    );
+    const del = await client.query('DELETE FROM application WHERE id = $1', [id]);
+    if (del.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: `Application not found: ${id}` });
+    }
+    await client.query('COMMIT');
+    res.json({ id, removedLinks: links.rowCount });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    next(err);
+  } finally {
+    client.release();
   }
 });
 
