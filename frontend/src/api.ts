@@ -1,15 +1,21 @@
 import type { Application, AppLink, Category, GraphPayload } from './types';
 
+// Where the API lives. Empty in dev (the Vite proxy forwards /api to the local
+// server); set VITE_API_BASE to the API origin in production, e.g.
+// https://api.yourdomain.com
+const API_BASE = import.meta.env.VITE_API_BASE ?? '';
+const url = (path: string) => `${API_BASE}${path}`;
+
 /** Fetch the full graph (categories, applications, links) from the backend. */
 export async function fetchGraph(): Promise<GraphPayload> {
-  const res = await fetch('/api/graph');
+  const res = await fetch(url('/api/graph'));
   if (!res.ok) throw new Error(`Failed to load graph (${res.status})`);
   return res.json();
 }
 
 /** Verify an admin token. Returns true if the backend accepts it. */
 export async function checkAdminToken(token: string): Promise<boolean> {
-  const res = await fetch('/api/admin/check', {
+  const res = await fetch(url('/api/admin/check'), {
     headers: { authorization: `Bearer ${token}` },
   });
   return res.ok;
@@ -42,7 +48,7 @@ export async function updateApplication(
   app: Application,
   token: string
 ): Promise<Application> {
-  const res = await fetch(`/api/applications/${encodeURIComponent(app.id)}`, {
+  const res = await fetch(url(`/api/applications/${encodeURIComponent(app.id)}`), {
     method: 'PUT',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
     body: JSON.stringify(editableFields(app)),
@@ -55,7 +61,7 @@ export async function createApplication(
   app: Application,
   token: string
 ): Promise<Application> {
-  const res = await fetch('/api/applications', {
+  const res = await fetch(url('/api/applications'), {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
     body: JSON.stringify({ id: app.id, ...editableFields(app) }),
@@ -65,7 +71,7 @@ export async function createApplication(
 
 /** Delete an application (and any links touching it). Requires a valid admin token. */
 export async function deleteApplication(id: string, token: string): Promise<void> {
-  const res = await fetch(`/api/applications/${encodeURIComponent(id)}`, {
+  const res = await fetch(url(`/api/applications/${encodeURIComponent(id)}`), {
     method: 'DELETE',
     headers: { authorization: `Bearer ${token}` },
   });
@@ -85,7 +91,7 @@ async function readCategory(res: Response, fallback: string): Promise<Category> 
 
 /** Create a new category. Requires a valid admin token. */
 export async function createCategory(category: Category, token: string): Promise<Category> {
-  const res = await fetch('/api/categories', {
+  const res = await fetch(url('/api/categories'), {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
     body: JSON.stringify(category),
@@ -95,7 +101,7 @@ export async function createCategory(category: Category, token: string): Promise
 
 /** Update a category. Requires a valid admin token. */
 export async function updateCategory(category: Category, token: string): Promise<Category> {
-  const res = await fetch(`/api/categories/${encodeURIComponent(category.id)}`, {
+  const res = await fetch(url(`/api/categories/${encodeURIComponent(category.id)}`), {
     method: 'PUT',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
     body: JSON.stringify({ name: category.name, color: category.color, sort: category.sort }),
@@ -105,7 +111,7 @@ export async function updateCategory(category: Category, token: string): Promise
 
 /** Delete a category (must be unused). Requires a valid admin token. */
 export async function deleteCategory(id: string, token: string): Promise<void> {
-  const res = await fetch(`/api/categories/${encodeURIComponent(id)}`, {
+  const res = await fetch(url(`/api/categories/${encodeURIComponent(id)}`), {
     method: 'DELETE',
     headers: { authorization: `Bearer ${token}` },
   });
@@ -132,7 +138,7 @@ async function readLink(res: Response, fallback: string): Promise<AppLink> {
 
 /** Create a new link. Requires a valid admin token. */
 export async function createLink(link: AppLink, token: string): Promise<AppLink> {
-  const res = await fetch('/api/links', {
+  const res = await fetch(url('/api/links'), {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
     body: JSON.stringify(linkBody(link)),
@@ -142,7 +148,7 @@ export async function createLink(link: AppLink, token: string): Promise<AppLink>
 
 /** Update a link by id. Requires a valid admin token. */
 export async function updateLink(link: AppLink, token: string): Promise<AppLink> {
-  const res = await fetch(`/api/links/${link.id}`, {
+  const res = await fetch(url(`/api/links/${link.id}`), {
     method: 'PUT',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
     body: JSON.stringify(linkBody(link)),
@@ -152,7 +158,7 @@ export async function updateLink(link: AppLink, token: string): Promise<AppLink>
 
 /** Delete a link by id. Requires a valid admin token. */
 export async function deleteLink(id: number, token: string): Promise<void> {
-  const res = await fetch(`/api/links/${id}`, {
+  const res = await fetch(url(`/api/links/${id}`), {
     method: 'DELETE',
     headers: { authorization: `Bearer ${token}` },
   });

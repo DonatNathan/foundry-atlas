@@ -1,0 +1,22 @@
+[Unit]
+Description=Foundry Atlas API
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+# Adjust the user and path to match your VPS.
+User=foundry
+WorkingDirectory=/opt/foundry-atlas/server
+# Loads DATABASE_URL, ADMIN_TOKEN, CORS_ORIGIN, PORT from this file.
+EnvironmentFile=/opt/foundry-atlas/server/.env
+ExecStart=/usr/bin/node index.mjs
+Restart=on-failure
+RestartSec=3
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=full
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
