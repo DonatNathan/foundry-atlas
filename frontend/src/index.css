@@ -346,12 +346,18 @@ h4 {
 
 /* ---------- view tabs ---------- */
 
-.view-tabs {
+.top-bar {
   position: absolute;
   top: 16px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 20;
+  z-index: 41;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.view-tabs {
   display: flex;
   gap: 2px;
   padding: 3px;
@@ -413,9 +419,11 @@ h4 {
   color: var(--text-faint);
 }
 
+/* Inline filters (desktop). */
 .table-filters {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 14px;
   margin-left: auto;
 }
@@ -429,6 +437,38 @@ h4 {
 }
 
 .table-filter span {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* Filters menu button — hidden on desktop, shown on mobile. */
+.filter-menu-trigger {
+  display: none;
+  margin-left: auto;
+}
+
+.filter-dialog {
+  width: 360px;
+  max-width: 92vw;
+}
+
+.filter-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+}
+
+.filter-field span {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -540,19 +580,16 @@ h4 {
 
 /* admin unlock control */
 .admin-control {
-  position: absolute;
-  z-index: 45;
-  bottom: 14px;
-  right: 16px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
+  padding: 7px 14px;
   border: 1px solid var(--panel-border);
-  border-radius: 4px;
+  border-radius: var(--radius);
   background: var(--panel);
+  box-shadow: var(--shadow);
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   backdrop-filter: blur(8px);
@@ -647,4 +684,52 @@ h4 {
 .detail-body::-webkit-scrollbar-thumb {
   background: #383e47;
   border-radius: 4px;
+}
+
+/* ---------- responsive (mobile) ---------- */
+
+@media (max-width: 640px) {
+  /* Drop the sidebar and detail panel below the tabs and span the full
+     screen width, with a small margin, so they're centered and don't
+     cover the Map/Table tabs. */
+  .sidebar,
+  .detail-panel {
+    top: 64px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+  }
+
+  .sidebar {
+    max-height: calc(100vh - 76px);
+  }
+
+  .detail-panel {
+    bottom: 12px;
+    /* Sit above the sidebar on small screens so a selected app is visible. */
+    z-index: 42;
+  }
+
+  /* Tighter table padding and a wrapping toolbar on small screens. */
+  .table-view {
+    padding: 70px 14px 14px;
+  }
+
+  .table-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .table-toolbar .bp6-input-group {
+    width: auto;
+    flex: 1 1 160px;
+  }
+
+  /* Swap inline filters for the menu button. */
+  .table-filters {
+    display: none;
+  }
+
+  .filter-menu-trigger {
+    display: block;
+  }
 }

@@ -81,19 +81,22 @@ export default function App() {
 
   return (
     <div className="app bp6-dark">
-      <div className="view-tabs">
-        <button
-          className={view === 'map' ? 'active' : ''}
-          onClick={() => setView('map')}
-        >
-          <Icon icon="graph" size={14} /> Map
-        </button>
-        <button
-          className={view === 'table' ? 'active' : ''}
-          onClick={() => setView('table')}
-        >
-          <Icon icon="th" size={14} /> Table
-        </button>
+      <div className="top-bar">
+        <div className="view-tabs">
+          <button
+            className={view === 'map' ? 'active' : ''}
+            onClick={() => setView('map')}
+          >
+            <Icon icon="graph" size={14} /> Map
+          </button>
+          <button
+            className={view === 'table' ? 'active' : ''}
+            onClick={() => setView('table')}
+          >
+            <Icon icon="th" size={14} /> Table
+          </button>
+        </div>
+        <AdminControls unlocked={canEdit} onUnlock={handleUnlock} onLock={handleLock} />
       </div>
 
       {view === 'map' ? (
@@ -130,7 +133,6 @@ export default function App() {
         />
       )}
       <EditAppDialog app={editingApp} onClose={() => setEditingId(null)} onSave={handleSave} />
-      <AdminControls unlocked={canEdit} onUnlock={handleUnlock} onLock={handleLock} />
     </div>
   );
 }

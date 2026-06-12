@@ -1,5 +1,15 @@
 import { useMemo, useState } from 'react';
-import { HTMLSelect, HTMLTable, Icon, InputGroup, Tag } from '@blueprintjs/core';
+import {
+  Button,
+  Dialog,
+  DialogBody,
+  DialogFooter,
+  HTMLSelect,
+  HTMLTable,
+  Icon,
+  InputGroup,
+  Tag,
+} from '@blueprintjs/core';
 import type { Application, Status, Tier } from '../types';
 import {
   categories,
@@ -50,6 +60,7 @@ export default function TableView({
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [tierFilter, setTierFilter] = useState<Tier | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<Status | 'all'>('all');
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const toggleSort = (key: SortKey) => {
     if (key === sortKey) setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
@@ -110,6 +121,73 @@ export default function TableView({
     <th className="th-sort">{sortLabel(key, label)}</th>
   );
 
+  const activeFilters =
+    (categoryFilter !== 'all' ? 1 : 0) +
+    (tierFilter !== 'all' ? 1 : 0) +
+    (statusFilter !== 'all' ? 1 : 0);
+
+  const clearFilters = () => {
+    setCategoryFilter('all');
+    setTierFilter('all');
+    setStatusFilter('all');
+  };
+
+  // The same three filters, rendered either inline (toolbar, desktop) or
+  // stacked inside the popover menu (mobile).
+  const filterFields = (menu: boolean) => {
+    const labelClass = menu ? 'filter-field' : 'table-filter';
+    const all = (label: string) => (menu ? label : 'All');
+    return (
+      <>
+        <label className={labelClass}>
+          <span>Category</span>
+          <HTMLSelect
+            fill={menu}
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.currentTarget.value)}
+          >
+            <option value="all">{all('All categories')}</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </HTMLSelect>
+        </label>
+        <label className={labelClass}>
+          <span>Level</span>
+          <HTMLSelect
+            fill={menu}
+            value={tierFilter}
+            onChange={(e) => setTierFilter(e.currentTarget.value as Tier | 'all')}
+          >
+            <option value="all">{all('All levels')}</option>
+            {(['beginner', 'intermediate', 'advanced'] as Tier[]).map((t) => (
+              <option key={t} value={t}>
+                {TIER_LABELS[t]}
+              </option>
+            ))}
+          </HTMLSelect>
+        </label>
+        <label className={labelClass}>
+          <span>Generation</span>
+          <HTMLSelect
+            fill={menu}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.currentTarget.value as Status | 'all')}
+          >
+            <option value="all">{all('All generations')}</option>
+            {(['stable', 'new', 'legacy'] as Status[]).map((s) => (
+              <option key={s} value={s}>
+                {STATUS_LABELS[s]}
+              </option>
+            ))}
+          </HTMLSelect>
+        </label>
+      </>
+    );
+  };
+
   return (
     <div className="table-view bp6-dark">
       <div className="table-toolbar">
@@ -123,51 +201,40 @@ export default function TableView({
         <span className="table-count">
           {rows.length} application{rows.length === 1 ? '' : 's'}
         </span>
-        <div className="table-filters">
-          <label className="table-filter">
-            <span>Category</span>
-            <HTMLSelect
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.currentTarget.value)}
-            >
-              <option value="all">All</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </HTMLSelect>
-          </label>
-          <label className="table-filter">
-            <span>Level</span>
-            <HTMLSelect
-              value={tierFilter}
-              onChange={(e) => setTierFilter(e.currentTarget.value as Tier | 'all')}
-            >
-              <option value="all">All</option>
-              {(['beginner', 'intermediate', 'advanced'] as Tier[]).map((t) => (
-                <option key={t} value={t}>
-                  {TIER_LABELS[t]}
-                </option>
-              ))}
-            </HTMLSelect>
-          </label>
-          <label className="table-filter">
-            <span>Generation</span>
-            <HTMLSelect
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.currentTarget.value as Status | 'all')}
-            >
-              <option value="all">All</option>
-              {(['stable', 'new', 'legacy'] as Status[]).map((s) => (
-                <option key={s} value={s}>
-                  {STATUS_LABELS[s]}
-                </option>
-              ))}
-            </HTMLSelect>
-          </label>
+
+        {/* Desktop: filters laid out inline in the toolbar. */}
+        <div className="table-filters">{filterFields(false)}</div>
+
+        {/* Mobile: filters collapsed behind a button that opens a centered dialog. */}
+        <div className="filter-menu-trigger">
+          <Button
+            icon="filter"
+            intent={activeFilters > 0 ? 'primary' : 'none'}
+            text={activeFilters > 0 ? `Filters (${activeFilters})` : 'Filters'}
+            onClick={() => setFiltersOpen(true)}
+          />
         </div>
       </div>
+
+      <Dialog
+        isOpen={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        title="Filters"
+        icon="filter"
+        className="bp6-dark filter-dialog"
+      >
+        <DialogBody>
+          <div className="filter-menu">{filterFields(true)}</div>
+        </DialogBody>
+        <DialogFooter
+          actions={
+            <>
+              {activeFilters > 0 && <Button variant="minimal" text="Clear" onClick={clearFilters} />}
+              <Button intent="primary" text="Done" onClick={() => setFiltersOpen(false)} />
+            </>
+          }
+        />
+      </Dialog>
 
       <div className="table-scroll">
         <HTMLTable interactive striped className="app-table">
