@@ -64,15 +64,17 @@ export default function App() {
           onSelect={setSelectedId}
         />
       ) : (
-        <TableView apps={visibleApps} selectedId={selectedId} onSelect={setSelectedId} />
+        <TableView apps={applications} selectedId={selectedId} onSelect={setSelectedId} />
       )}
 
-      <Sidebar
-        filters={filters}
-        onFiltersChange={setFilters}
-        onSelect={setSelectedId}
-        visibleCount={visibleApps.length}
-      />
+      {view === 'map' && (
+        <Sidebar
+          filters={filters}
+          onFiltersChange={setFilters}
+          onSelect={setSelectedId}
+          visibleCount={visibleApps.length}
+        />
+      )}
       {selectedApp && (
         <DetailPanel
           app={selectedApp}

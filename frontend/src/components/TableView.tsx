@@ -1,7 +1,14 @@
 import { useMemo, useState } from 'react';
-import { HTMLTable, Icon, InputGroup, Tag } from '@blueprintjs/core';
-import type { Application } from '../types';
-import { categoryById, colorOf, degreeOf, STATUS_LABELS, TIER_LABELS } from '../data';
+import { HTMLSelect, HTMLTable, Icon, InputGroup, Tag } from '@blueprintjs/core';
+import type { Application, Status, Tier } from '../types';
+import {
+  categories,
+  categoryById,
+  colorOf,
+  degreeOf,
+  STATUS_LABELS,
+  TIER_LABELS,
+} from '../data';
 
 interface TableViewProps {
   apps: Application[];
@@ -32,6 +39,9 @@ export default function TableView({ apps, selectedId, onSelect }: TableViewProps
   const [query, setQuery] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [tierFilter, setTierFilter] = useState<Tier | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<Status | 'all'>('all');
 
   const toggleSort = (key: SortKey) => {
     if (key === sortKey) setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
@@ -43,15 +53,18 @@ export default function TableView({ apps, selectedId, onSelect }: TableViewProps
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const filtered = q
-      ? apps.filter(
-          (a) =>
-            a.name.toLowerCase().includes(q) ||
-            a.description.toLowerCase().includes(q) ||
-            a.use_case.toLowerCase().includes(q) ||
-            (categoryById.get(a.category_id)?.name.toLowerCase().includes(q) ?? false)
-        )
-      : apps;
+    const filtered = apps.filter((a) => {
+      if (categoryFilter !== 'all' && a.category_id !== categoryFilter) return false;
+      if (tierFilter !== 'all' && a.tier !== tierFilter) return false;
+      if (statusFilter !== 'all' && a.status !== statusFilter) return false;
+      if (!q) return true;
+      return (
+        a.name.toLowerCase().includes(q) ||
+        a.description.toLowerCase().includes(q) ||
+        a.use_case.toLowerCase().includes(q) ||
+        (categoryById.get(a.category_id)?.name.toLowerCase().includes(q) ?? false)
+      );
+    });
 
     const cmp = (a: Application, b: Application): number => {
       switch (sortKey) {
@@ -74,17 +87,19 @@ export default function TableView({ apps, selectedId, onSelect }: TableViewProps
     const sorted = [...filtered].sort(cmp);
     if (sortDir === 'desc') sorted.reverse();
     return sorted;
-  }, [apps, query, sortKey, sortDir]);
+  }, [apps, query, sortKey, sortDir, categoryFilter, tierFilter, statusFilter]);
+
+  const sortLabel = (key: SortKey, label: string) => (
+    <span className="th-inner" onClick={() => toggleSort(key)}>
+      {label}
+      {sortKey === key && (
+        <Icon icon={sortDir === 'asc' ? 'caret-up' : 'caret-down'} size={12} />
+      )}
+    </span>
+  );
 
   const header = (key: SortKey, label: string) => (
-    <th className="th-sort" onClick={() => toggleSort(key)}>
-      <span className="th-inner">
-        {label}
-        {sortKey === key && (
-          <Icon icon={sortDir === 'asc' ? 'caret-up' : 'caret-down'} size={12} />
-        )}
-      </span>
-    </th>
+    <th className="th-sort">{sortLabel(key, label)}</th>
   );
 
   return (
@@ -100,6 +115,50 @@ export default function TableView({ apps, selectedId, onSelect }: TableViewProps
         <span className="table-count">
           {rows.length} application{rows.length === 1 ? '' : 's'}
         </span>
+        <div className="table-filters">
+          <label className="table-filter">
+            <span>Category</span>
+            <HTMLSelect
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.currentTarget.value)}
+            >
+              <option value="all">All</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </HTMLSelect>
+          </label>
+          <label className="table-filter">
+            <span>Level</span>
+            <HTMLSelect
+              value={tierFilter}
+              onChange={(e) => setTierFilter(e.currentTarget.value as Tier | 'all')}
+            >
+              <option value="all">All</option>
+              {(['beginner', 'intermediate', 'advanced'] as Tier[]).map((t) => (
+                <option key={t} value={t}>
+                  {TIER_LABELS[t]}
+                </option>
+              ))}
+            </HTMLSelect>
+          </label>
+          <label className="table-filter">
+            <span>Generation</span>
+            <HTMLSelect
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.currentTarget.value as Status | 'all')}
+            >
+              <option value="all">All</option>
+              {(['stable', 'new', 'legacy'] as Status[]).map((s) => (
+                <option key={s} value={s}>
+                  {STATUS_LABELS[s]}
+                </option>
+              ))}
+            </HTMLSelect>
+          </label>
+        </div>
       </div>
 
       <div className="table-scroll">
