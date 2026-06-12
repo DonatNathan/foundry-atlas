@@ -35,12 +35,18 @@
       "name": "Governance & Operations",
       "color": "#F5498B",
       "sort": 6
+    },
+    {
+      "id": "learning",
+      "name": "Learning & Help",
+      "color": "#62747E",
+      "sort": 7
     }
   ],
   "applications": [
     {
       "id": "agent-studio",
-      "name": "AIP Agent Studio",
+      "name": "AIP Chatbot Studio",
       "category_id": "ai-ml",
       "description": "The builder for conversational AI agents: configure system prompts, retrieval over documents and objects, and tools (Functions, Actions) the agent may use, then publish chat agents to users and applications.",
       "use_case": "Create governed, ontology-aware chat assistants — a maintenance copilot that knows your machines and can file work orders via Actions.",
@@ -319,34 +325,6 @@
       "tips": "Open Data Lineage whenever you inherit an unfamiliar pipeline — it answers \"where does this column come from?\" faster than reading code."
     },
     {
-      "id": "dataset-preview",
-      "name": "Dataset Preview",
-      "category_id": "data-integration",
-      "description": "The default view of any dataset: browse rows, inspect the schema, view file contents, explore dataset history and branches, and check build status.",
-      "use_case": "Inspect any dataset's contents, schema, and transaction history — the first thing you open when exploring data you don't know.",
-      "tier": "beginner",
-      "is_core": true,
-      "learning_order": 2,
-      "status": "stable",
-      "era": "Foundational",
-      "docs_url": "https://www.palantir.com/docs/foundry/dataset-preview/overview/",
-      "tips": "Datasets are the fundamental storage primitive of Foundry. Learn what a dataset, a transaction, and a branch are here — everything else builds on them."
-    },
-    {
-      "id": "media-sets",
-      "name": "Media Sets",
-      "category_id": "data-integration",
-      "description": "First-class storage for unstructured media — images, PDFs, audio, video — with schema enforcement, transactional updates, and APIs for processing media in pipelines and AIP workflows.",
-      "use_case": "Store and process documents, images, and other unstructured content, e.g. PDF extraction pipelines or media inputs to LLM workflows.",
-      "tier": "advanced",
-      "is_core": false,
-      "learning_order": null,
-      "status": "new",
-      "era": "AIP era (2023+)",
-      "docs_url": "https://www.palantir.com/docs/foundry/media-sets/overview/",
-      "tips": "Reach for Media Sets instead of stuffing raw files into datasets whenever you work with documents or images, especially for AIP document-processing workflows."
-    },
-    {
       "id": "pipeline-builder",
       "name": "Pipeline Builder",
       "category_id": "data-integration",
@@ -459,20 +437,6 @@
       "tips": "The bridge from dashboards (humans watch data) to operations (the platform watches data). Pairs naturally with Actions and AIP Logic."
     },
     {
-      "id": "functions",
-      "name": "Functions",
-      "category_id": "ontology",
-      "description": "Server-side logic (TypeScript or Python, authored in Code Repositories) that runs against the Ontology — powering computed values, validations, Action logic, and callable APIs for apps and agents.",
-      "use_case": "Encode business logic once — e.g. \"compute remaining capacity\" or \"validate this reassignment\" — and reuse it across Workshop apps, Actions, OSDK apps, and AIP agents.",
-      "tier": "advanced",
-      "is_core": false,
-      "learning_order": null,
-      "status": "stable",
-      "era": "Foundational",
-      "docs_url": "https://www.palantir.com/docs/foundry/functions/overview/",
-      "tips": "Functions are the glue between the Ontology and applications. If a Workshop app does something \"smart\", there is usually a Function behind it."
-    },
-    {
       "id": "machinery",
       "name": "Machinery",
       "category_id": "ontology",
@@ -527,6 +491,454 @@
       "era": "Foundational",
       "docs_url": "https://www.palantir.com/docs/foundry/vertex/overview/",
       "tips": "Powerful for supply-chain and network use cases; only worth learning once your ontology is rich in links."
+    },
+    {
+      "id": "artifacts",
+      "name": "Artifacts",
+      "category_id": "data-integration",
+      "description": "A repository for storing and versioning code artifacts — Python/conda packages, Maven and npm libraries, and container images — that repositories and workspaces build against.",
+      "use_case": "Publish an internal Python package once and depend on it from many repositories; pin library versions for reproducible builds.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/artifacts/overview/",
+      "tips": "Most teams never open Artifacts directly — it sits behind Code Repositories. Learn it when you need shared internal libraries."
+    },
+    {
+      "id": "compute-modules",
+      "name": "Compute Modules",
+      "category_id": "data-integration",
+      "description": "Run custom containerized logic and long-running services inside Foundry, exposing functions backed by your own Docker images.",
+      "use_case": "Host bespoke compute — a custom model server, a heavy transformation, or an external API wrapper — and call it as a governed function.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/compute-modules/overview/",
+      "tips": "Reach for Compute Modules only when Pipeline Builder and Code Repositories can't express the logic you need."
+    },
+    {
+      "id": "hyperauto",
+      "name": "HyperAuto",
+      "category_id": "data-integration",
+      "description": "Automatically generates and maintains pipelines from enterprise source systems (such as SAP), turning raw extracts into clean, ontology-ready datasets.",
+      "use_case": "Stand up a governed SAP integration in days instead of months by letting HyperAuto build the extraction and cleaning pipelines for you.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/hyperauto/overview/",
+      "tips": "Hugely valuable for big ERP sources — but overkill for a handful of CSVs."
+    },
+    {
+      "id": "jupyter",
+      "name": "Jupyter",
+      "category_id": "data-integration",
+      "description": "A hosted JupyterLab environment — a flavor of Code Workspaces — for interactive Python notebook analysis directly on Foundry data.",
+      "use_case": "Explore datasets ad hoc, prototype models, and run scratch analysis in familiar notebooks without moving data off-platform.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Modern default (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/code-workspaces/overview/",
+      "tips": "Great for exploration; promote anything you want to keep into a Code Repository so it is scheduled and versioned."
+    },
+    {
+      "id": "rstudio",
+      "name": "RStudio",
+      "category_id": "data-integration",
+      "description": "A hosted RStudio environment — a flavor of Code Workspaces — for statistical analysis and modeling in R on Foundry data.",
+      "use_case": "Run R-based statistics, econometrics, or bioinformatics workflows against governed datasets.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Modern default (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/code-workspaces/overview/",
+      "tips": "Pick RStudio when your team already lives in R; otherwise the Python tooling is more deeply integrated."
+    },
+    {
+      "id": "vs-code",
+      "name": "VS Code",
+      "category_id": "data-integration",
+      "description": "A hosted Visual Studio Code workspace — a flavor of Code Workspaces — for full-featured development against Foundry resources.",
+      "use_case": "Develop with the editor you already know, with extensions and a terminal, while staying inside Foundry's governance.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/code-workspaces/overview/",
+      "tips": "The most flexible workspace flavor — good when you want a real IDE rather than a notebook."
+    },
+    {
+      "id": "time-series-catalog",
+      "name": "Time Series Catalog",
+      "category_id": "data-integration",
+      "description": "Registers, organizes, and serves high-volume time series data so it can be charted, attached to objects, and used in modeling.",
+      "use_case": "Manage millions of sensor or market series and expose them efficiently to Quiver, the ontology, and models.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/time-series/overview/",
+      "tips": "Essential for IoT and sensor-heavy workflows; pair it with Quiver for visualization."
+    },
+    {
+      "id": "value-types",
+      "name": "Value Types",
+      "category_id": "ontology",
+      "description": "Define reusable semantic value types (such as email, currency, or geohash) that constrain and standardize property values across the ontology.",
+      "use_case": "Guarantee that every 'email' property in the ontology is validated and rendered consistently, wherever it appears.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/ontology/value-types/",
+      "tips": "Define value types early — retrofitting them onto a large ontology is far more work."
+    },
+    {
+      "id": "foundry-rules",
+      "name": "Foundry Rules",
+      "category_id": "ontology",
+      "description": "Define and run business rules and decision logic against ontology objects to classify, flag, or trigger actions.",
+      "use_case": "Encode policy — eligibility checks, thresholds, routing rules — once and apply it consistently across objects and workflows.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/rules/overview/",
+      "tips": "Keep rules close to the ontology so the logic stays explainable and auditable."
+    },
+    {
+      "id": "insight",
+      "name": "Insight",
+      "category_id": "analytics",
+      "description": "A lightweight reporting tool for assembling charts, tables, and narrative into shareable analytical reports.",
+      "use_case": "Produce a recurring operational report or a polished one-off summary for stakeholders without building a full application.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/insight/overview/",
+      "tips": "Use Insight for read-only reporting; reach for Workshop when users need to take action."
+    },
+    {
+      "id": "carbon",
+      "name": "Carbon Workspace",
+      "category_id": "app-building",
+      "description": "A customizable workspace shell that brings objects, applications, and pages from across Foundry into a single tailored homepage.",
+      "use_case": "Give a team one curated landing page that stitches together the Workshop apps, objects, and links they use every day.",
+      "tier": "beginner",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/carbon/overview/",
+      "tips": "Carbon is the 'front door' for end users — set one up so people don't have to hunt across the platform."
+    },
+    {
+      "id": "custom-widgets",
+      "name": "Custom Widgets",
+      "category_id": "app-building",
+      "description": "Build and publish custom React widgets that extend Workshop with bespoke UI components.",
+      "use_case": "Add a specialized visualization or interaction that Workshop's built-in widgets can't provide.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/workshop/custom-widgets/",
+      "tips": "Only build a custom widget once you've confirmed no built-in widget fits — they carry maintenance cost."
+    },
+    {
+      "id": "aip-analyst",
+      "name": "AIP Analyst",
+      "category_id": "ai-ml",
+      "description": "An AI assistant for analytical exploration that answers questions over your ontology and data and helps build the analysis to support them.",
+      "use_case": "Ask a question in plain language and get back charts, object sets, and explanations grounded in your data.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/aip/analyst/",
+      "tips": "Treat its output as a starting point — verify the underlying object sets before acting on conclusions."
+    },
+    {
+      "id": "pilot",
+      "name": "Pilot",
+      "category_id": "ai-ml",
+      "description": "An autonomous AIP agent that plans and executes multi-step tasks across Foundry, calling tools and actions to reach a goal.",
+      "use_case": "Hand off a higher-level objective and let Pilot chain together the queries, actions, and steps needed to complete it.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/aip/pilot/",
+      "tips": "Beta — keep a human in the loop and scope its available tools carefully."
+    },
+    {
+      "id": "aip-threads",
+      "name": "AIP Threads",
+      "category_id": "ai-ml",
+      "description": "Collaborative, shareable AI chat threads grounded in your Foundry context for ongoing analysis and Q&A.",
+      "use_case": "Keep a persistent, shareable conversation with the AI about a workflow, so teammates can pick up the same context.",
+      "tier": "beginner",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/aip/threads/",
+      "tips": "Beta — use threads to share reasoning with teammates rather than re-asking the same questions."
+    },
+    {
+      "id": "document-intelligence",
+      "name": "AIP Document Intelligence",
+      "category_id": "ai-ml",
+      "description": "Extracts structured data from unstructured documents — PDFs, scans, forms — using AI, turning them into ontology objects.",
+      "use_case": "Convert a backlog of contracts or invoices into queryable objects you can analyze and act on.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/aip/document-intelligence/",
+      "tips": "Spend time on the extraction schema up front — clean structure here pays off everywhere downstream."
+    },
+    {
+      "id": "model-catalog",
+      "name": "Model Catalog",
+      "category_id": "ai-ml",
+      "description": "Browse, register, and manage machine learning models — foundation models and your own — available for use across the platform.",
+      "use_case": "Find an approved model, see how it's governed, and reuse it instead of re-importing or retraining.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/models/model-catalog/",
+      "tips": "Check the catalog before importing a new model — the one you need may already be registered and governed."
+    },
+    {
+      "id": "model-studio",
+      "name": "Model Studio",
+      "category_id": "ai-ml",
+      "description": "An interactive environment for building, training, and evaluating models without leaving the platform.",
+      "use_case": "Iterate on a model — train, compare runs, and evaluate — then publish it to the Model Catalog.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/models/model-studio/",
+      "tips": "Promote promising experiments into Modeling Objectives so deployment stays governed."
+    },
+    {
+      "id": "ai-fde",
+      "name": "AI FDE",
+      "category_id": "ai-ml",
+      "description": "An AI 'forward deployed engineer' that builds end-to-end workflows — pipelines, ontology, and apps — from a high-level goal.",
+      "use_case": "Bootstrap a whole workflow from a description, then refine the generated pieces by hand.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/aip/ai-fde/",
+      "tips": "Best as an accelerator: review and harden everything it generates before relying on it."
+    },
+    {
+      "id": "resource-management",
+      "name": "Resource Management",
+      "category_id": "governance",
+      "description": "Manage and monitor compute and storage resource usage across the platform — view consumption, set quotas, and track spend.",
+      "use_case": "Find which projects and pipelines consume the most compute, set usage limits, and control platform cost.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/resource-management/overview/",
+      "tips": "Check resource usage before scaling a pipeline up — it's the fastest way to catch runaway cost."
+    },
+    {
+      "id": "upgrade-assistant",
+      "name": "Upgrade Assistant",
+      "category_id": "governance",
+      "description": "Helps move resources and installed products to new versions safely, surfacing what will change and what needs attention.",
+      "use_case": "Roll a fleet of resources forward to a new version with visibility into breaking changes.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/upgrade-assistant/overview/",
+      "tips": "Run it in a branch first so you can review the impact before upgrading production."
+    },
+    {
+      "id": "devops",
+      "name": "DevOps",
+      "category_id": "governance",
+      "description": "Build, version, and operate installable products — package resources into products, manage releases, and monitor installations across environments.",
+      "use_case": "Ship a repeatable solution to many tenants or environments and keep track of every installation's version and health.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/marketplace/devops/",
+      "tips": "Lean on DevOps once a solution needs to be deployed more than once — it makes Marketplace products operable at scale."
+    },
+    {
+      "id": "global-branching",
+      "name": "Global Branching",
+      "category_id": "governance",
+      "description": "Create and manage branches that span many resources at once, enabling coordinated, isolated development across an entire workflow.",
+      "use_case": "Develop a cross-cutting change — pipelines, ontology, and apps together — on one branch, then merge it as a unit.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/branching/global-branching/",
+      "tips": "Use a global branch when a change touches several resources that must move together."
+    },
+    {
+      "id": "workflow-lineage",
+      "name": "Workflow Lineage",
+      "category_id": "governance",
+      "description": "Visualizes end-to-end lineage across an entire workflow — from source data through pipelines, ontology, and applications.",
+      "use_case": "Trace how a number on a dashboard traces all the way back to its source systems, across resource types.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/lineage/workflow-lineage/",
+      "tips": "Pair it with Data Lineage: Data Lineage covers datasets, Workflow Lineage covers the whole workflow."
+    },
+    {
+      "id": "cipher",
+      "name": "Cipher",
+      "category_id": "governance",
+      "description": "Applies tokenization and encryption to sensitive columns, controlling who can decrypt data through governed Cipher channels.",
+      "use_case": "Keep PII or secrets protected at rest while still allowing authorized users to compute on decrypted values.",
+      "tier": "advanced",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/cipher/overview/",
+      "tips": "Design Cipher channels with security up front — they're central to how sensitive data flows through the platform."
+    },
+    {
+      "id": "sensitive-data-scanner",
+      "name": "Sensitive Data Scanner",
+      "category_id": "governance",
+      "description": "Automatically scans datasets to detect and classify sensitive data (PII, secrets) and apply protective markings.",
+      "use_case": "Catch unmarked PII before it spreads, and drive markings or Cipher protection automatically.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/sensitive-data-scanner/overview/",
+      "tips": "Run the scanner across new data sources early — it's far cheaper than remediating leaks later."
+    },
+    {
+      "id": "issues",
+      "name": "Issues",
+      "category_id": "governance",
+      "description": "Track, discuss, and resolve issues on resources and objects — a built-in collaboration and ticketing surface across Foundry.",
+      "use_case": "Flag a data-quality problem or a bug right on the resource and keep the conversation next to the work.",
+      "tier": "beginner",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/issues/overview/",
+      "tips": "Use Issues instead of email threads — keeping the discussion on the resource preserves context."
+    },
+    {
+      "id": "linter",
+      "name": "Linter",
+      "category_id": "governance",
+      "description": "Automatically checks resources against best-practice and health rules, surfacing problems and recommended fixes.",
+      "use_case": "Catch anti-patterns in pipelines and repositories before they cause failures or tech debt.",
+      "tier": "intermediate",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/linter/overview/",
+      "tips": "Treat lint warnings like compiler warnings — clear them early to keep workflows healthy."
+    },
+    {
+      "id": "build-with-aip-examples",
+      "name": "Examples (Build with AIP)",
+      "category_id": "learning",
+      "description": "A gallery of example workflows and applications that demonstrate how to build with AIP and the rest of the platform.",
+      "use_case": "Find a worked example close to what you want to build and adapt it instead of starting from scratch.",
+      "tier": "beginner",
+      "is_core": false,
+      "learning_order": null,
+      "status": "new",
+      "era": "AIP era (2023+)",
+      "docs_url": "https://www.palantir.com/docs/foundry/aip/examples/",
+      "tips": "Skim the examples before starting a new build — you'll often find a pattern to copy."
+    },
+    {
+      "id": "training",
+      "name": "Training",
+      "category_id": "learning",
+      "description": "Structured, hands-on courses that teach Foundry skills, from beginner onboarding to advanced workflows.",
+      "use_case": "Onboard a new team member with a guided curriculum rather than ad hoc shoulder-surfing.",
+      "tier": "beginner",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/foundry/training/",
+      "tips": "Send new users to Training first — a few hours here saves days of confusion later."
+    },
+    {
+      "id": "walkthroughs",
+      "name": "Walkthroughs",
+      "category_id": "learning",
+      "description": "Guided, in-product interactive tutorials that walk you through building real workflows step by step.",
+      "use_case": "Learn an app by doing — follow an interactive walkthrough inside the product instead of reading docs alone.",
+      "tier": "beginner",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": "https://www.palantir.com/docs/foundry/foundry/walkthroughs/",
+      "tips": "Great for the first time you touch an app; pair with the docs for depth."
+    },
+    {
+      "id": "foundry-docs",
+      "name": "Foundry Platform Documentation",
+      "category_id": "learning",
+      "description": "The official Foundry product documentation — reference, how-to guides, and concept explanations for every application.",
+      "use_case": "Look up exactly how a feature works, with authoritative reference and examples.",
+      "tier": "beginner",
+      "is_core": false,
+      "learning_order": null,
+      "status": "stable",
+      "era": "Foundational",
+      "docs_url": null,
+      "tips": "When AIP Assist and the docs disagree, trust the docs — they're the source of truth."
     }
   ],
   "links": [
@@ -541,36 +953,6 @@
       "target_id": "code-repositories",
       "relationship": "feeds",
       "description": "Synced datasets are read by code-based transforms."
-    },
-    {
-      "source_id": "data-connection",
-      "target_id": "media-sets",
-      "relationship": "feeds",
-      "description": "File-based syncs land documents and media into media sets."
-    },
-    {
-      "source_id": "media-sets",
-      "target_id": "pipeline-builder",
-      "relationship": "feeds",
-      "description": "Media sets are processed (OCR, extraction, chunking) in pipelines."
-    },
-    {
-      "source_id": "media-sets",
-      "target_id": "aip-logic",
-      "relationship": "feeds",
-      "description": "Documents and images from media sets are inputs to LLM workflows."
-    },
-    {
-      "source_id": "pipeline-builder",
-      "target_id": "dataset-preview",
-      "relationship": "feeds",
-      "description": "Pipeline outputs are datasets you inspect in Dataset Preview."
-    },
-    {
-      "source_id": "code-repositories",
-      "target_id": "dataset-preview",
-      "relationship": "feeds",
-      "description": "Transform outputs are datasets you inspect in Dataset Preview."
     },
     {
       "source_id": "pipeline-builder",
@@ -613,12 +995,6 @@
       "target_id": "modeling-objectives",
       "relationship": "feeds",
       "description": "Model adapters and training code publish models to objectives."
-    },
-    {
-      "source_id": "code-repositories",
-      "target_id": "functions",
-      "relationship": "powers",
-      "description": "Functions are authored and versioned in Code Repositories."
     },
     {
       "source_id": "data-lineage",
@@ -727,36 +1103,6 @@
       "target_id": "developer-console",
       "relationship": "powers",
       "description": "OSDK generates typed SDKs from the ontology definition."
-    },
-    {
-      "source_id": "functions",
-      "target_id": "workshop",
-      "relationship": "powers",
-      "description": "Functions compute derived values and drive logic inside Workshop apps."
-    },
-    {
-      "source_id": "functions",
-      "target_id": "ontology-manager",
-      "relationship": "powers",
-      "description": "Function-backed Actions implement complex write logic."
-    },
-    {
-      "source_id": "functions",
-      "target_id": "developer-console",
-      "relationship": "powers",
-      "description": "External OSDK apps call published Functions as APIs."
-    },
-    {
-      "source_id": "aip-logic",
-      "target_id": "functions",
-      "relationship": "builds-on",
-      "description": "Logic boards publish as Functions, callable everywhere Functions are."
-    },
-    {
-      "source_id": "modeling-objectives",
-      "target_id": "functions",
-      "relationship": "powers",
-      "description": "Deployed models are wrapped as Functions for live inference."
     },
     {
       "source_id": "object-explorer",
@@ -901,6 +1247,300 @@
       "target_id": "marketplace",
       "relationship": "complements",
       "description": "Architectures designed here are realized and shipped via Marketplace."
+    },
+    {
+      "source_id": "artifacts",
+      "target_id": "code-repositories",
+      "relationship": "powers",
+      "description": "Hosts the libraries and packages repositories build against."
+    },
+    {
+      "source_id": "artifacts",
+      "target_id": "code-workspaces",
+      "relationship": "powers",
+      "description": "Supplies versioned packages and images to workspaces."
+    },
+    {
+      "source_id": "code-repositories",
+      "target_id": "compute-modules",
+      "relationship": "feeds",
+      "description": "Repositories define and publish compute modules."
+    },
+    {
+      "source_id": "compute-modules",
+      "target_id": "ontology-manager",
+      "relationship": "powers",
+      "description": "Host custom logic that backs ontology Actions and functions."
+    },
+    {
+      "source_id": "data-connection",
+      "target_id": "hyperauto",
+      "relationship": "feeds",
+      "description": "Source-system syncs feed HyperAuto's automated pipeline generation."
+    },
+    {
+      "source_id": "hyperauto",
+      "target_id": "ontology-manager",
+      "relationship": "feeds",
+      "description": "Produces clean, ontology-ready datasets."
+    },
+    {
+      "source_id": "jupyter",
+      "target_id": "code-workspaces",
+      "relationship": "builds-on",
+      "description": "A Code Workspaces environment flavor."
+    },
+    {
+      "source_id": "rstudio",
+      "target_id": "code-workspaces",
+      "relationship": "builds-on",
+      "description": "A Code Workspaces environment flavor."
+    },
+    {
+      "source_id": "vs-code",
+      "target_id": "code-workspaces",
+      "relationship": "builds-on",
+      "description": "A Code Workspaces environment flavor."
+    },
+    {
+      "source_id": "pipeline-builder",
+      "target_id": "time-series-catalog",
+      "relationship": "feeds",
+      "description": "Pipelines populate registered time series."
+    },
+    {
+      "source_id": "time-series-catalog",
+      "target_id": "quiver",
+      "relationship": "feeds",
+      "description": "Serves time series into Quiver for charting."
+    },
+    {
+      "source_id": "value-types",
+      "target_id": "ontology-manager",
+      "relationship": "powers",
+      "description": "Constrain and standardize ontology property values."
+    },
+    {
+      "source_id": "foundry-rules",
+      "target_id": "ontology-manager",
+      "relationship": "builds-on",
+      "description": "Rules evaluate against ontology objects."
+    },
+    {
+      "source_id": "foundry-rules",
+      "target_id": "automate",
+      "relationship": "powers",
+      "description": "Rule outcomes can trigger automations."
+    },
+    {
+      "source_id": "insight",
+      "target_id": "ontology-manager",
+      "relationship": "builds-on",
+      "description": "Reports are built on ontology objects."
+    },
+    {
+      "source_id": "insight",
+      "target_id": "quiver",
+      "relationship": "complements",
+      "description": "A lighter-weight reporting companion to Quiver."
+    },
+    {
+      "source_id": "workshop",
+      "target_id": "carbon",
+      "relationship": "embeds-in",
+      "description": "Workshop apps surface inside a Carbon workspace."
+    },
+    {
+      "source_id": "object-explorer",
+      "target_id": "carbon",
+      "relationship": "embeds-in",
+      "description": "Object views can be pinned into a Carbon homepage."
+    },
+    {
+      "source_id": "custom-widgets",
+      "target_id": "workshop",
+      "relationship": "embeds-in",
+      "description": "Custom React widgets embed into Workshop pages."
+    },
+    {
+      "source_id": "aip-analyst",
+      "target_id": "ontology-manager",
+      "relationship": "builds-on",
+      "description": "Answers questions grounded in ontology objects."
+    },
+    {
+      "source_id": "aip-analyst",
+      "target_id": "contour",
+      "relationship": "assists",
+      "description": "Helps build analytical explorations."
+    },
+    {
+      "source_id": "ontology-manager",
+      "target_id": "pilot",
+      "relationship": "powers",
+      "description": "Pilot retrieves objects and calls Actions as governed tools."
+    },
+    {
+      "source_id": "aip-logic",
+      "target_id": "pilot",
+      "relationship": "powers",
+      "description": "Logic functions serve as tools Pilot can invoke."
+    },
+    {
+      "source_id": "aip-threads",
+      "target_id": "aip-assist",
+      "relationship": "complements",
+      "description": "Persistent, shareable threads alongside the inline assistant."
+    },
+    {
+      "source_id": "data-connection",
+      "target_id": "document-intelligence",
+      "relationship": "feeds",
+      "description": "Provides documents for AI extraction."
+    },
+    {
+      "source_id": "document-intelligence",
+      "target_id": "ontology-manager",
+      "relationship": "feeds",
+      "description": "Turns extracted document data into ontology objects."
+    },
+    {
+      "source_id": "model-catalog",
+      "target_id": "modeling-objectives",
+      "relationship": "feeds",
+      "description": "Provides registered models for deployment objectives."
+    },
+    {
+      "source_id": "model-studio",
+      "target_id": "model-catalog",
+      "relationship": "feeds",
+      "description": "Publishes trained models to the catalog."
+    },
+    {
+      "source_id": "ai-fde",
+      "target_id": "pipeline-builder",
+      "relationship": "powers",
+      "description": "Generates pipelines as part of end-to-end builds."
+    },
+    {
+      "source_id": "ai-fde",
+      "target_id": "workshop",
+      "relationship": "powers",
+      "description": "Scaffolds applications as part of end-to-end builds."
+    },
+    {
+      "source_id": "resource-management",
+      "target_id": "builds",
+      "relationship": "monitors",
+      "description": "Tracks the compute consumed by builds and schedules."
+    },
+    {
+      "source_id": "resource-management",
+      "target_id": "control-panel",
+      "relationship": "complements",
+      "description": "Surfaces usage that informs platform administration."
+    },
+    {
+      "source_id": "upgrade-assistant",
+      "target_id": "marketplace",
+      "relationship": "complements",
+      "description": "Helps upgrade installed Marketplace products to new versions."
+    },
+    {
+      "source_id": "devops",
+      "target_id": "marketplace",
+      "relationship": "complements",
+      "description": "Manages releases and installations of Marketplace products."
+    },
+    {
+      "source_id": "devops",
+      "target_id": "builds",
+      "relationship": "monitors",
+      "description": "Tracks the health of deployed product installations."
+    },
+    {
+      "source_id": "global-branching",
+      "target_id": "code-repositories",
+      "relationship": "complements",
+      "description": "Coordinates branches across repositories and resources."
+    },
+    {
+      "source_id": "global-branching",
+      "target_id": "pipeline-builder",
+      "relationship": "complements",
+      "description": "Lets pipeline changes branch together with related resources."
+    },
+    {
+      "source_id": "workflow-lineage",
+      "target_id": "data-lineage",
+      "relationship": "complements",
+      "description": "Extends lineage from datasets to ontology and applications."
+    },
+    {
+      "source_id": "cipher",
+      "target_id": "data-connection",
+      "relationship": "governs",
+      "description": "Tokenizes and encrypts sensitive columns as they land."
+    },
+    {
+      "source_id": "sensitive-data-scanner",
+      "target_id": "data-connection",
+      "relationship": "monitors",
+      "description": "Scans synced datasets for sensitive data."
+    },
+    {
+      "source_id": "sensitive-data-scanner",
+      "target_id": "cipher",
+      "relationship": "complements",
+      "description": "Flags sensitive data that Cipher then protects."
+    },
+    {
+      "source_id": "issues",
+      "target_id": "projects",
+      "relationship": "complements",
+      "description": "Track and discuss issues on project resources."
+    },
+    {
+      "source_id": "issues",
+      "target_id": "data-health",
+      "relationship": "complements",
+      "description": "Turn detected health problems into tracked issues."
+    },
+    {
+      "source_id": "linter",
+      "target_id": "code-repositories",
+      "relationship": "monitors",
+      "description": "Checks repositories against best-practice rules."
+    },
+    {
+      "source_id": "linter",
+      "target_id": "pipeline-builder",
+      "relationship": "monitors",
+      "description": "Flags pipeline anti-patterns and recommended fixes."
+    },
+    {
+      "source_id": "foundry-docs",
+      "target_id": "aip-assist",
+      "relationship": "complements",
+      "description": "Authoritative reference behind the assistant's answers."
+    },
+    {
+      "source_id": "training",
+      "target_id": "projects",
+      "relationship": "complements",
+      "description": "Hands-on courses that onboard new users to the platform."
+    },
+    {
+      "source_id": "walkthroughs",
+      "target_id": "workshop",
+      "relationship": "complements",
+      "description": "In-product tutorials for building real apps."
+    },
+    {
+      "source_id": "build-with-aip-examples",
+      "target_id": "aip-logic",
+      "relationship": "complements",
+      "description": "Worked examples to adapt when building with AIP."
     }
   ]
 }
