@@ -5,7 +5,7 @@
 **Please do not report security vulnerabilities through public GitHub issues.**
 
 Instead, report them privately via GitHub's
-[Security Advisories](https://github.com/DonatNathan/palantir-foundry-map/security/advisories/new)
+[Security Advisories](https://github.com/DonatNathan/foundry-atlas/security/advisories/new)
 ("Report a vulnerability"), or email the maintainer at `nathandonatt@gmail.com`.
 
 Please include:

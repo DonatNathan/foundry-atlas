@@ -1,0 +1,35 @@
+name: Bug report
+description: Something in the app is broken or behaves unexpectedly.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to '...'
+        2. Click '...'
+        3. See error
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser / OS, and whether you're on a local checkout or a deployment.
+    validations:
+      required: false
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots / console output
+      description: Anything else that helps — screenshots, errors from the browser or server console.
+    validations:
+      required: false
