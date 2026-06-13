@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Button,
   Callout,
@@ -36,12 +36,14 @@ export default function EditAppDialog({
   const [draft, setDraft] = useState<Application | null>(app);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [prevApp, setPrevApp] = useState(app);
 
   // Reset the form whenever a different app is opened.
-  useEffect(() => {
+  if (app !== prevApp) {
+    setPrevApp(app);
     setDraft(app);
     setError(null);
-  }, [app]);
+  }
 
   if (!draft) return null;
 

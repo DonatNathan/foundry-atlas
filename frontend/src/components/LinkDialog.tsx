@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Button,
   Callout,
@@ -32,11 +32,14 @@ export default function LinkDialog({
   const [draft, setDraft] = useState<AppLink | null>(link);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [prevLink, setPrevLink] = useState(link);
 
-  useEffect(() => {
+  // Reset the form whenever a different link is opened.
+  if (link !== prevLink) {
+    setPrevLink(link);
     setDraft(link);
     setError(null);
-  }, [link]);
+  }
 
   const sortedApps = useMemo(() => [...apps].sort((a, b) => a.name.localeCompare(b.name)), [apps]);
 

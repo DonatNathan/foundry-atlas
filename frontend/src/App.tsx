@@ -7,7 +7,7 @@ import TableView from './components/TableView';
 import AdminView from './components/AdminView';
 import AdminControls from './components/AdminControls';
 import ShareButton from './components/ShareButton';
-import { DataProvider } from './DataContext';
+import { DataProvider } from './DataProvider';
 import { buildShareQuery, parseShareState } from './urlState';
 import { applications, categories as seedCategories, links as seedLinks } from './data';
 import {
