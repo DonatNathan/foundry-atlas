@@ -193,3 +193,8 @@ supersedes Slate"*.
   occasionally reorganizes.
 - Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Security reports
   go through [SECURITY.md](SECURITY.md).
+
+## Screenshots
+
+<img width="1920" height="931" alt="Screenshot from 2026-06-12 15-42-54" src="https://github.com/user-attachments/assets/d9c0d003-eec9-4b67-833f-360ac9ea54d9" />
+
