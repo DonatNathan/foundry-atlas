@@ -392,6 +392,17 @@ h4 {
   color: #fff;
 }
 
+/* Floating panel wrapper for the Share control, matching .view-tabs. */
+.top-action {
+  display: flex;
+  padding: 3px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+}
+
 /* ---------- table view ---------- */
 
 .table-view {

@@ -6,7 +6,9 @@ import Sidebar from './components/Sidebar';
 import TableView from './components/TableView';
 import AdminView from './components/AdminView';
 import AdminControls from './components/AdminControls';
+import ShareButton from './components/ShareButton';
 import { DataProvider } from './DataProvider';
+import { buildShareQuery, parseShareState } from './urlState';
 import { applications, categories as seedCategories, links as seedLinks } from './data';
 import {
   createApplication,
@@ -20,18 +22,21 @@ import {
   updateCategory,
   updateLink,
 } from './api';
-import type { Application, AppLink, Category, Filters, Status, Tier } from './types';
+import type { Application, AppLink, Category, Filters } from './types';
 
 type View = 'map' | 'table' | 'admin';
 
 const TOKEN_KEY = 'foundry-admin-token';
 
-const allTiers = () => new Set<Tier>(['beginner', 'intermediate', 'advanced']);
-const allStatuses = () => new Set<Status>(['stable', 'new', 'legacy']);
-
 export default function App() {
-  const [view, setView] = useState<View>('map');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Restore view, selected app, and filters from the URL so permalinks reopen
+  // the exact same view. Parsed once on mount against the bundled categories.
+  const initialState = useMemo(
+    () => parseShareState(window.location.search, seedCategories.map((c) => c.id)),
+    []
+  );
+  const [view, setView] = useState<View>(initialState.view);
+  const [selectedId, setSelectedId] = useState<string | null>(initialState.selectedId);
   // Seed from the bundled snapshot for instant render, then refresh from the API.
   const [apps, setApps] = useState<Application[]>(applications);
   const [categories, setCategories] = useState<Category[]>(seedCategories);
@@ -39,13 +44,7 @@ export default function App() {
   const [adminToken, setAdminToken] = useState<string | null>(
     () => localStorage.getItem(TOKEN_KEY)
   );
-  const [filters, setFilters] = useState<Filters>({
-    categories: new Set(seedCategories.map((c) => c.id)),
-    tiers: allTiers(),
-    statuses: allStatuses(),
-    coreOnly: false,
-    learningPath: false,
-  });
+  const [filters, setFilters] = useState<Filters>(initialState.filters);
 
   // Load the live data from the backend on mount (source of truth).
   useEffect(() => {
@@ -75,6 +74,18 @@ export default function App() {
     }
     knownCategoryIds.current = current;
   }, [categories]);
+
+  // Mirror the shareable state into the URL so the current view can be copied as
+  // a permalink (handled by the Share button). Admin is local-only and excluded.
+  useEffect(() => {
+    if (view === 'admin') return;
+    const qs = buildShareQuery(
+      { view, selectedId, filters },
+      categories.map((c) => c.id)
+    );
+    const url = `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash}`;
+    window.history.replaceState(null, '', url);
+  }, [view, selectedId, filters, categories]);
 
   const appById = useMemo(() => new Map(apps.map((a) => [a.id, a])), [apps]);
 
@@ -183,6 +194,7 @@ export default function App() {
               </button>
             )}
           </div>
+          <ShareButton />
           <AdminControls unlocked={canEdit} onUnlock={handleUnlock} onLock={handleLock} />
         </div>
 
