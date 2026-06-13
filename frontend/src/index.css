@@ -261,6 +261,17 @@ h4 {
   font-weight: 700;
 }
 
+.detail-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+
+.path-export {
+  margin: 8px 0 4px;
+}
+
 .detail-tags {
   display: flex;
   flex-wrap: wrap;

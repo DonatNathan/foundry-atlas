@@ -235,6 +235,7 @@ export default function App() {
         {selectedApp && activeView !== 'admin' && (
           <DetailPanel
             app={selectedApp}
+            filters={filters}
             onSelect={setSelectedId}
             onClose={() => setSelectedId(null)}
           />
