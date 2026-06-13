@@ -9,7 +9,6 @@
     "server": "npm --prefix server start",
     "seed": "npm --prefix server run seed",
     "build": "npm --prefix frontend run build",
-    "preview": "npm --prefix frontend run preview",
-    "db:sqlite": "node database/build.mjs"
+    "preview": "npm --prefix frontend run preview"
   }
 }

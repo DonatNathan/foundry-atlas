@@ -38,13 +38,6 @@ frontend/            Vite + React 19 + TypeScript (Blueprint UI)
     └── components/AdminControls.tsx  Token unlock/lock
 
 scripts/dev.mjs      Runs the API + Vite dev server together (npm run dev)
-deploy/              VPS deployment helpers
-├── foundry-atlas.service     systemd unit for the Node API
-└── cloudflared-config.yml    Cloudflare Tunnel config (TLS at the edge)
-
-database/            ⚠️ Legacy local SQLite pipeline (superseded by server/).
-                     Kept for reference; `npm run db:sqlite` still regenerates
-                     graph.json from seed.sql, but Postgres is now the source of truth.
 ```
 
 ## Data, access & editing
@@ -99,39 +92,61 @@ You can also run them separately with `npm run dev:server` and `npm run dev:web`
 
 ## Deploying
 
-The API is a long-running Node process; the frontend is a static bundle. You can serve
-both from one origin or split them — pick one of the paths below.
+The API runs as a container; PostgreSQL is provided by your environment (a managed
+instance, or a shared `postgres` service in your stack). The frontend is a static bundle
+hosted separately and points at the API over CORS.
 
-**Single origin (simplest).** The API serves `frontend/dist` when it's present, so
-`/api` just works with no CORS:
-
-```bash
-npm run build         # → frontend/dist
-# Start the API with your DB + secret in the environment:
-PGHOST=...  PGPASSWORD=...  ADMIN_TOKEN=...  PGSSL=require  npm run server
-```
-
-**Docker (API image).** The build context is the **repo root** because the seed reads
-`frontend/src/data/graph.json`:
+**API (container).** The image is built from [server/Dockerfile](server/Dockerfile) with
+the **repo root** as the build context (the seed reads `frontend/src/data/graph.json`):
 
 ```bash
 docker build -f server/Dockerfile -t foundry-atlas-api .
-docker run --env-file .env -p 4000:4000 foundry-atlas-api
 ```
 
-Copy the repo-root [`.env.example`](.env.example) to `.env` for the discrete `PG*`,
-`ADMIN_TOKEN`, `CORS_ORIGIN`, and `PORT` variables.
+Wire it into your Compose stack as a service — point `PGHOST` at your Postgres and fill in
+the rest from the repo-root [`.env.example`](.env.example):
 
-**VPS + Cloudflare Tunnel (split).** Host the static frontend on Cloudflare Pages (set
-`VITE_API_BASE` to your API origin — see [frontend/.env.example](frontend/.env.example)),
-run the API on a VPS via the systemd unit in [deploy/foundry-atlas.service](deploy/foundry-atlas.service),
-and expose it with the tunnel config in [deploy/cloudflared-config.yml](deploy/cloudflared-config.yml)
-(TLS terminates at Cloudflare's edge, so the Node server only listens on localhost).
-Set `CORS_ORIGIN` to your frontend domain.
+```yaml
+services:
+  foundry-atlas-api:
+    build:
+      context: .                      # repo root
+      dockerfile: server/Dockerfile
+    image: foundry-atlas-api
+    restart: unless-stopped
+    environment:
+      PGHOST: postgres                # your Postgres host / service name
+      PGPORT: "5432"
+      PGUSER: ${PGUSER}
+      PGPASSWORD: ${PGPASSWORD}
+      PGDATABASE: ${PGDATABASE}
+      ADMIN_TOKEN: ${ADMIN_TOKEN}
+      CORS_ORIGIN: ${CORS_ORIGIN}     # your frontend's origin, for CORS
+      PORT: "4000"
+    ports:
+      - "4000:4000"
+```
 
-Run `npm run seed` once against the production database. Set `PGSSL=require` if your
-managed Postgres needs SSL. Keep `ADMIN_TOKEN` secret (env var only — never commit
-`.env`); rotate it by changing the value and restarting.
+Then bring it up and seed once:
+
+```bash
+docker compose up -d --build
+docker compose run --rm foundry-atlas-api npm run seed   # one-time: schema + 64-app snapshot
+```
+
+> ⚠️ `npm run seed` resets the schema (it drops and recreates the tables). Run it **once**
+> on first deploy — never on a database that already holds edits you want to keep.
+
+**Frontend (static).** Build with `VITE_API_BASE` set to the API's public origin
+(see [frontend/.env.example](frontend/.env.example)) and deploy the `dist/` output to any
+static host:
+
+```bash
+VITE_API_BASE=https://api.yourdomain.com npm run build   # → frontend/dist
+```
+
+Keep `ADMIN_TOKEN` secret (env var only — never commit `.env`); rotate it by changing the
+value and restarting the API container.
 
 ## The data model
 
