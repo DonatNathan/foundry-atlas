@@ -1,12 +1,20 @@
 import { useState } from 'react';
 import { AnchorButton, Button, Callout, Divider, Tag } from '@blueprintjs/core';
-import type { Application } from '../types';
-import { appById, RELATIONSHIP_VERBS, STATUS_LABELS, TIER_LABELS } from '../data';
+import type { Application, Filters } from '../types';
+import {
+  appById,
+  describeFilters,
+  matchesFilters,
+  RELATIONSHIP_VERBS,
+  STATUS_LABELS,
+  TIER_LABELS,
+} from '../data';
 import { useData } from '../DataContext';
 import { exportNeighborhoodCard } from '../exportCard';
 
 interface DetailPanelProps {
   app: Application;
+  filters: Filters;
   onSelect: (id: string) => void;
   onClose: () => void;
 }
@@ -17,8 +25,8 @@ interface Connection {
   desc: string | null;
 }
 
-export default function DetailPanel({ app, onSelect, onClose }: DetailPanelProps) {
-  const { categoryById, colorOf, links } = useData();
+export default function DetailPanel({ app, filters, onSelect, onClose }: DetailPanelProps) {
+  const { categories, categoryById, colorOf, links } = useData();
   const category = categoryById.get(app.category_id);
   const color = colorOf(app);
   const [exporting, setExporting] = useState(false);
@@ -54,11 +62,14 @@ export default function DetailPanel({ app, onSelect, onClose }: DetailPanelProps
         app,
         color,
         categoryName: category?.name ?? 'Uncategorized',
-        connections: connections.map((c) => ({
-          app: c.other,
-          verb: c.verb,
-          color: colorOf(c.other),
-        })),
+        // Mirror the map: only neighbors that pass the active filters.
+        connections: connections
+          .filter((c) => matchesFilters(c.other, filters))
+          .map((c) => ({
+            app: c.other,
+            color: colorOf(c.other),
+          })),
+        filters: describeFilters(filters, categories),
       });
     } finally {
       setExporting(false);

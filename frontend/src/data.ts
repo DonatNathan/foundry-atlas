@@ -1,5 +1,14 @@
 import rawGraph from './data/graph.json';
-import type { Application, AppLink, Category, GraphPayload, Relationship } from './types';
+import type {
+  Application,
+  AppLink,
+  Category,
+  Filters,
+  GraphPayload,
+  Relationship,
+  Status,
+  Tier,
+} from './types';
 
 const graph = rawGraph as GraphPayload;
 
@@ -53,3 +62,35 @@ export const STATUS_LABELS: Record<Application['status'], string> = {
   new: 'Newer (AIP era)',
   legacy: 'Legacy',
 };
+
+const ALL_TIERS: Tier[] = ['beginner', 'intermediate', 'advanced'];
+const ALL_STATUSES: Status[] = ['stable', 'new', 'legacy'];
+
+/** Whether an application is shown under the given filters (the map's predicate). */
+export function matchesFilters(app: Application, f: Filters): boolean {
+  return (
+    f.categories.has(app.category_id) &&
+    f.tiers.has(app.tier) &&
+    f.statuses.has(app.status) &&
+    (!f.coreOnly || app.is_core)
+  );
+}
+
+/** Short human-readable chips for the active (narrowed) filters; empty when none. */
+export function describeFilters(f: Filters, cats: Category[]): string[] {
+  const chips: string[] = [];
+  if (f.coreOnly) chips.push('Core only');
+  if (f.categories.size < cats.length) {
+    const names = cats.filter((c) => f.categories.has(c.id)).map((c) => c.name);
+    chips.push(`Categories: ${names.join(', ')}`);
+  }
+  if (f.tiers.size < ALL_TIERS.length) {
+    const names = ALL_TIERS.filter((t) => f.tiers.has(t)).map((t) => TIER_LABELS[t]);
+    chips.push(`Levels: ${names.join(', ')}`);
+  }
+  if (f.statuses.size < ALL_STATUSES.length) {
+    const names = ALL_STATUSES.filter((s) => f.statuses.has(s)).map((s) => STATUS_LABELS[s]);
+    chips.push(`Generation: ${names.join(', ')}`);
+  }
+  return chips;
+}

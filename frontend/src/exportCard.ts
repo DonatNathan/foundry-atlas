@@ -22,7 +22,6 @@ const FONT = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans
 
 export interface CardConnection {
   app: Application;
-  verb: string;
   color: string;
 }
 
@@ -31,6 +30,8 @@ export interface NeighborhoodCard {
   color: string;
   categoryName: string;
   connections: CardConnection[];
+  /** Active-filter chips to caption the card; empty means "full map". */
+  filters: string[];
 }
 
 export interface PathStep {
@@ -132,6 +133,25 @@ function background(ctx: CanvasRenderingContext2D, glow: string): void {
   g.addColorStop(1, `${glow}00`);
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
+}
+
+// A single-line caption documenting which filters the card was exported under,
+// so a shared image is self-explanatory ("this is the Core-only view").
+function filterNote(ctx: CanvasRenderingContext2D, chips: string[]): void {
+  const x = 56;
+  const y = H - 74;
+  ctx.font = `600 12px ${FONT}`;
+  ctx.fillStyle = FAINT;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  const label = 'ACTIVE FILTERS';
+  ctx.fillText(label, x, y);
+  const labelW = ctx.measureText(label).width + 14;
+
+  ctx.font = `500 14px ${FONT}`;
+  ctx.fillStyle = chips.length ? MUTED : FAINT;
+  const text = chips.length ? chips.join('   ·   ') : 'None — showing the full map';
+  ctx.fillText(truncate(ctx, text, W - 112 - labelW), x + labelW, y);
 }
 
 function footer(ctx: CanvasRenderingContext2D): void {
@@ -265,7 +285,6 @@ function drawNeighborhood(
   ctx.setLineDash([]);
 
   const n = Math.max(shown.length, 1);
-  const showVerbs = shown.length > 0 && shown.length <= 7;
 
   const positions = shown.map((c, i) => {
     const a = -Math.PI / 2 + (i * 2 * Math.PI) / n;
@@ -280,22 +299,6 @@ function drawNeighborhood(
     ctx.strokeStyle = `${p.c.color}66`;
     ctx.lineWidth = 1.6;
     ctx.stroke();
-
-    if (showVerbs) {
-      const mx = cx + (p.x - cx) * 0.52;
-      const my = cy + (p.y - cy) * 0.52;
-      let ang = p.a;
-      if (Math.cos(p.a) < 0) ang += Math.PI; // keep text upright
-      ctx.save();
-      ctx.translate(mx, my);
-      ctx.rotate(ang);
-      ctx.font = `600 10px ${FONT}`;
-      ctx.fillStyle = FAINT;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'bottom';
-      ctx.fillText(p.c.verb.toUpperCase(), 0, -4);
-      ctx.restore();
-    }
   }
 
   // Neighbor nodes + labels.
@@ -405,12 +408,13 @@ export async function exportNeighborhoodCard(card: NeighborhoodCard): Promise<vo
   const diagLeft = 56 + colW + 40;
   const cx = (diagLeft + (W - 56)) / 2;
   drawNeighborhood(ctx, card, cx, 300);
+  filterNote(ctx, card.filters);
   footer(ctx);
   await download(canvas, `foundry-atlas-${card.app.id}-neighborhood.png`);
 }
 
 /** Export the ordered learning path as a shareable PNG. */
-export async function exportLearningPathCard(steps: PathStep[]): Promise<void> {
+export async function exportLearningPathCard(steps: PathStep[], filters: string[] = []): Promise<void> {
   await fontsReady();
   const { canvas, ctx } = newCanvas();
   background(ctx, GREEN);
@@ -475,6 +479,7 @@ export async function exportLearningPathCard(steps: PathStep[]): Promise<void> {
     ctx.fillText(tierLabel(step.app.tier), sx + 46, sy + 11);
   });
 
+  filterNote(ctx, filters);
   footer(ctx);
   await download(canvas, 'foundry-atlas-learning-path.png');
 }
