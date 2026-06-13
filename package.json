@@ -1,7 +1,18 @@
 {
-  "name": "palantir-foundry-map",
+  "name": "foundry-atlas",
   "private": true,
+  "version": "1.0.0",
   "description": "Foundry Atlas — an interactive map of Palantir Foundry applications",
+  "license": "MIT",
+  "author": "Nathan Donat",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DonatNathan/foundry-atlas.git"
+  },
+  "homepage": "https://github.com/DonatNathan/foundry-atlas#readme",
+  "bugs": {
+    "url": "https://github.com/DonatNathan/foundry-atlas/issues"
+  },
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "dev:web": "npm --prefix frontend run dev",
@@ -9,7 +20,6 @@
     "server": "npm --prefix server start",
     "seed": "npm --prefix server run seed",
     "build": "npm --prefix frontend run build",
-    "preview": "npm --prefix frontend run preview",
-    "db:sqlite": "node database/build.mjs"
+    "preview": "npm --prefix frontend run preview"
   }
 }

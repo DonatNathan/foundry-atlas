@@ -1,8 +1,16 @@
 {
-  "name": "foundry-map-server",
+  "name": "foundry-atlas-server",
   "private": true,
+  "version": "1.0.0",
   "type": "module",
   "description": "API server for the Foundry Atlas — public reads, admin-token-gated writes.",
+  "license": "MIT",
+  "author": "Nathan Donat",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DonatNathan/foundry-atlas.git",
+    "directory": "server"
+  },
   "scripts": {
     "seed": "node --env-file-if-exists=.env seed.mjs",
     "start": "node --env-file-if-exists=.env index.mjs",

@@ -1,0 +1,30 @@
+name: Data correction
+description: An application, relationship, or description in the map is wrong, missing, or outdated.
+labels: ["data"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The catalog is hand-curated and Foundry moves fast — corrections are the most
+        valuable contribution. Please cite a Palantir docs link where you can.
+  - type: input
+    id: subject
+    attributes:
+      label: Which application or link?
+      description: Name of the application(s) or the relationship involved.
+    validations:
+      required: true
+  - type: textarea
+    id: correction
+    attributes:
+      label: What's wrong, and what's correct?
+      description: Describe the current value and what it should be (description, use case, tier, status, category, a link's type/direction, etc.).
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Source
+      description: A Palantir docs link or other reference that backs the correction.
+    validations:
+      required: false

@@ -1,8 +1,15 @@
 {
-  "name": "frontend",
+  "name": "foundry-atlas-frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "license": "MIT",
+  "author": "Nathan Donat",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DonatNathan/foundry-atlas.git",
+    "directory": "frontend"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
