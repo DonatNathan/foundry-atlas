@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Button,
   Callout,
@@ -29,11 +29,14 @@ export default function CategoryDialog({
   const [draft, setDraft] = useState<Category | null>(category);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [prevCategory, setPrevCategory] = useState(category);
 
-  useEffect(() => {
+  // Reset the form whenever a different category is opened.
+  if (category !== prevCategory) {
+    setPrevCategory(category);
     setDraft(category);
     setError(null);
-  }, [category]);
+  }
 
   if (!draft) return null;
 

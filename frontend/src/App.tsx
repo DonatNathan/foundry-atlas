@@ -6,7 +6,7 @@ import Sidebar from './components/Sidebar';
 import TableView from './components/TableView';
 import AdminView from './components/AdminView';
 import AdminControls from './components/AdminControls';
-import { DataProvider } from './DataContext';
+import { DataProvider } from './DataProvider';
 import { applications, categories as seedCategories, links as seedLinks } from './data';
 import {
   createApplication,
