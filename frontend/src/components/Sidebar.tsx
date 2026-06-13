@@ -3,6 +3,7 @@ import { Button, Checkbox, InputGroup, Switch, Tag } from '@blueprintjs/core';
 import type { Application, Filters, Status, Tier } from '../types';
 import { applications, learningPath, links, STATUS_LABELS, TIER_LABELS } from '../data';
 import { useData } from '../DataContext';
+import { exportLearningPathCard } from '../exportCard';
 
 interface SidebarProps {
   filters: Filters;
@@ -103,17 +104,30 @@ export default function Sidebar({
             }
           />
           {filters.learningPath && (
-            <ol className="path-list">
-              {learningPath.map((a) => (
-                <li key={a.id}>
-                  <button onClick={() => onSelect(a.id)}>
-                    <span className="path-step">{a.learning_order}</span>
-                    <span className="dot" style={{ background: colorOf(a) }} />
-                    {a.name}
-                  </button>
-                </li>
-              ))}
-            </ol>
+            <>
+              <ol className="path-list">
+                {learningPath.map((a) => (
+                  <li key={a.id}>
+                    <button onClick={() => onSelect(a.id)}>
+                      <span className="path-step">{a.learning_order}</span>
+                      <span className="dot" style={{ background: colorOf(a) }} />
+                      {a.name}
+                    </button>
+                  </li>
+                ))}
+              </ol>
+              <Button
+                variant="outlined"
+                icon="export"
+                fill
+                className="path-export"
+                onClick={() =>
+                  exportLearningPathCard(learningPath.map((a) => ({ app: a, color: colorOf(a) })))
+                }
+              >
+                Export path as PNG
+              </Button>
+            </>
           )}
 
           <Switch
