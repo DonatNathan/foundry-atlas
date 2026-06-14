@@ -58,19 +58,20 @@ export interface Filters {
   learningPath: boolean;
 }
 
-export type SuggestionKind = 'new_link' | 'correction';
+export type SuggestionKind = 'new_link' | 'correction' | 'edit_link';
 export type SuggestionStatus = 'pending' | 'approved' | 'rejected';
 
-/** A community-submitted correction or new link, awaiting moderation. */
+/** A community-submitted correction, new link, or link edit, awaiting moderation. */
 export interface Suggestion {
   id: number;
   kind: SuggestionKind;
   status: SuggestionStatus;
-  // Correction payload (null for new_link).
+  // Correction payload (null for link kinds).
   app_id: string | null;
   field: string | null;
   value: string | null;
-  // New-link payload (null for correction).
+  // Link payload: link_id is set for edit_link; source/target for new_link.
+  link_id: number | null;
   source_id: string | null;
   target_id: string | null;
   relationship: Relationship | null;
@@ -88,6 +89,7 @@ export interface SuggestionInput {
   app_id?: string;
   field?: string;
   value?: string;
+  link_id?: number;
   source_id?: string;
   target_id?: string;
   relationship?: Relationship;

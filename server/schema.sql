@@ -54,7 +54,7 @@ CREATE INDEX idx_link_target ON application_link(target_id);
 -- idempotently on startup so existing deployments don't need a destructive reseed.)
 CREATE TABLE suggestion (
   id           SERIAL PRIMARY KEY,
-  kind         TEXT NOT NULL CHECK (kind IN ('new_link', 'correction')),
+  kind         TEXT NOT NULL CHECK (kind IN ('new_link', 'correction', 'edit_link')),
   status       TEXT NOT NULL DEFAULT 'pending'
                  CHECK (status IN ('pending', 'approved', 'rejected')),
 
@@ -64,7 +64,9 @@ CREATE TABLE suggestion (
   field        TEXT,
   value        TEXT,
 
-  -- New-link payload (NULL for correction).
+  -- Link payload. For new_link: source_id/target_id/relationship/link_description.
+  -- For edit_link: link_id plus the proposed relationship/link_description.
+  link_id          INTEGER REFERENCES application_link(id) ON DELETE CASCADE,
   source_id        TEXT REFERENCES application(id) ON DELETE CASCADE,
   target_id        TEXT REFERENCES application(id) ON DELETE CASCADE,
   relationship     TEXT,

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button, Callout, Icon, Tag } from '@blueprintjs/core';
-import type { Suggestion } from '../types';
+import type { AppLink, Suggestion } from '../types';
 import { RELATIONSHIP_VERBS, STATUS_LABELS, TIER_LABELS } from '../data';
 
 interface SuggestionQueueProps {
@@ -8,6 +8,7 @@ interface SuggestionQueueProps {
   nameOf: (id: string) => string;
   dotColor: (id: string) => string;
   categoryName: (id: string) => string;
+  linkById: (id: number) => AppLink | undefined;
   onApprove: (s: Suggestion) => Promise<void>;
   onReject: (s: Suggestion) => Promise<void>;
 }
@@ -26,11 +27,15 @@ const FIELD_LABELS: Record<string, string> = {
   tips: 'Learning tip',
 };
 
+const verbOf = (rel: string | null): string =>
+  rel ? (RELATIONSHIP_VERBS[rel as keyof typeof RELATIONSHIP_VERBS]?.out ?? rel) : '—';
+
 export default function SuggestionQueue({
   suggestions,
   nameOf,
   dotColor,
   categoryName,
+  linkById,
   onApprove,
   onReject,
 }: SuggestionQueueProps) {
@@ -78,6 +83,10 @@ export default function SuggestionQueue({
                 <Tag minimal intent="primary" icon="edit">
                   Correction
                 </Tag>
+              ) : s.kind === 'edit_link' ? (
+                <Tag minimal intent="warning" icon="link">
+                  Edit link
+                </Tag>
               ) : (
                 <Tag minimal intent="success" icon="new-link">
                   New link
@@ -100,6 +109,45 @@ export default function SuggestionQueue({
                   <div className="suggestion-value">{formatValue(s)}</div>
                 </div>
               </div>
+            ) : s.kind === 'edit_link' ? (
+              (() => {
+                const link = s.link_id != null ? linkById(s.link_id) : undefined;
+                const src = link?.source_id ?? '';
+                const tgt = link?.target_id ?? '';
+                const relChanged = link != null && link.relationship !== s.relationship;
+                const descChanged = link != null && (link.description ?? '') !== (s.link_description ?? '');
+                return (
+                  <div className="suggestion-body">
+                    {link ? (
+                      <>
+                        <span className="suggestion-target">
+                          <span className="dot" style={{ background: dotColor(src) }} />
+                          {nameOf(src)}
+                        </span>
+                        <span className="suggestion-rel">
+                          <Icon icon="arrow-right" size={12} />
+                        </span>
+                        <span className="suggestion-target">
+                          <span className="dot" style={{ background: dotColor(tgt) }} />
+                          {nameOf(tgt)}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="suggestion-meta">(the link no longer exists)</span>
+                    )}
+                    <div className="suggestion-change">
+                      Relationship: <strong>{verbOf(s.relationship)}</strong>
+                      {relChanged && <span className="suggestion-was"> (was {verbOf(link!.relationship)})</span>}
+                      <div className="suggestion-value">
+                        {s.link_description || '(no description)'}
+                        {descChanged && link!.description && (
+                          <span className="suggestion-was"> · was: {link!.description}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()
             ) : (
               <div className="suggestion-body">
                 <span className="suggestion-target">
@@ -108,9 +156,7 @@ export default function SuggestionQueue({
                 </span>
                 <span className="suggestion-rel">
                   <Icon icon="arrow-right" size={12} />
-                  {s.relationship
-                    ? (RELATIONSHIP_VERBS[s.relationship]?.out ?? s.relationship)
-                    : '—'}
+                  {verbOf(s.relationship)}
                   <Icon icon="arrow-right" size={12} />
                 </span>
                 <span className="suggestion-target">

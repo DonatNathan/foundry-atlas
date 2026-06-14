@@ -367,7 +367,7 @@ app.delete('/api/links/:id', requireAdmin, async (req, res, next) => {
 // (which APPLIES the change) or rejects in the Admin tab.
 
 const SUGGESTION_COLUMNS = `id, kind, status, app_id, field, value,
-  source_id, target_id, relationship, link_description, comment, submitter,
+  link_id, source_id, target_id, relationship, link_description, comment, submitter,
   created_at, resolved_at`;
 
 // Created idempotently on startup so existing deployments pick up the feature
@@ -376,12 +376,13 @@ const ensureSuggestionTable = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS suggestion (
       id           SERIAL PRIMARY KEY,
-      kind         TEXT NOT NULL CHECK (kind IN ('new_link', 'correction')),
+      kind         TEXT NOT NULL CHECK (kind IN ('new_link', 'correction', 'edit_link')),
       status       TEXT NOT NULL DEFAULT 'pending'
                      CHECK (status IN ('pending', 'approved', 'rejected')),
       app_id       TEXT REFERENCES application(id) ON DELETE CASCADE,
       field        TEXT,
       value        TEXT,
+      link_id          INTEGER REFERENCES application_link(id) ON DELETE CASCADE,
       source_id        TEXT REFERENCES application(id) ON DELETE CASCADE,
       target_id        TEXT REFERENCES application(id) ON DELETE CASCADE,
       relationship     TEXT,
@@ -393,6 +394,15 @@ const ensureSuggestionTable = async () => {
     )
   `);
   await query('CREATE INDEX IF NOT EXISTS idx_suggestion_status ON suggestion(status, created_at)');
+  // Migrate tables created before edit_link existed: add the column and widen the
+  // kind check. Safe to run every startup.
+  await query(
+    'ALTER TABLE suggestion ADD COLUMN IF NOT EXISTS link_id INTEGER REFERENCES application_link(id) ON DELETE CASCADE'
+  );
+  await query('ALTER TABLE suggestion DROP CONSTRAINT IF EXISTS suggestion_kind_check');
+  await query(
+    "ALTER TABLE suggestion ADD CONSTRAINT suggestion_kind_check CHECK (kind IN ('new_link', 'correction', 'edit_link'))"
+  );
 };
 
 // Fields a correction may target — the same set an admin can edit directly.
@@ -454,8 +464,8 @@ app.post('/api/suggestions', async (req, res, next) => {
   try {
     const b = req.body ?? {};
     const kind = b.kind;
-    if (kind !== 'new_link' && kind !== 'correction') {
-      return res.status(400).json({ error: "kind must be 'new_link' or 'correction'." });
+    if (!['new_link', 'correction', 'edit_link'].includes(kind)) {
+      return res.status(400).json({ error: "kind must be 'new_link', 'edit_link', or 'correction'." });
     }
 
     const comment = trimOrNull(b.comment);
@@ -486,6 +496,27 @@ app.post('/api/suggestions', async (req, res, next) => {
          VALUES ('correction', $1, $2, $3, $4, $5)
          RETURNING ${SUGGESTION_COLUMNS}`,
         [appId, field, coerced.value === null ? null : String(coerced.value), comment, submitter]
+      );
+      row = result.rows[0];
+    } else if (kind === 'edit_link') {
+      const linkId = Number(b.link_id);
+      if (!Number.isInteger(linkId)) return res.status(400).json({ error: 'link_id is required for an edit.' });
+      const relationship = trimOrNull(b.relationship);
+      const linkDesc = trimOrNull(b.link_description);
+      if (!RELATIONSHIPS.has(relationship)) {
+        return res.status(400).json({ error: `Invalid relationship: ${relationship}` });
+      }
+      if (linkDesc && linkDesc.length > MAX.description) {
+        return res.status(400).json({ error: `Link description is too long (max ${MAX.description}).` });
+      }
+      const existing = await query('SELECT id FROM application_link WHERE id = $1', [linkId]);
+      if (existing.rowCount === 0) return res.status(400).json({ error: `Unknown link: ${linkId}` });
+
+      const result = await query(
+        `INSERT INTO suggestion (kind, link_id, relationship, link_description, comment, submitter)
+         VALUES ('edit_link', $1, $2, $3, $4, $5)
+         RETURNING ${SUGGESTION_COLUMNS}`,
+        [linkId, relationship, linkDesc, comment, submitter]
       );
       row = result.rows[0];
     } else {
@@ -580,6 +611,26 @@ app.post('/api/suggestions/:id/approve', requireAdmin, async (req, res, next) =>
       if (upd.rowCount === 0) {
         await client.query('ROLLBACK');
         return res.status(409).json({ error: 'The target application no longer exists.' });
+      }
+    } else if (s.kind === 'edit_link') {
+      if (!s.link_id) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'The link no longer exists.' });
+      }
+      try {
+        const upd = await client.query(
+          `UPDATE application_link SET relationship = $2, description = $3 WHERE id = $1`,
+          [s.link_id, s.relationship, s.link_description]
+        );
+        if (upd.rowCount === 0) {
+          await client.query('ROLLBACK');
+          return res.status(409).json({ error: 'The link no longer exists.' });
+        }
+      } catch (e) {
+        await client.query('ROLLBACK');
+        if (e.code === '23505') return res.status(409).json({ error: 'That exact link already exists.' });
+        if (e.code === '23514') return res.status(400).json({ error: 'Invalid relationship.' });
+        throw e;
       }
     } else {
       if (!s.source_id || !s.target_id) {

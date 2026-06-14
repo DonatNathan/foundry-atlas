@@ -53,8 +53,17 @@ const fieldValue = (app: Application, key: string): string => {
 };
 
 export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: SuggestDialogProps) {
-  const { categories } = useData();
+  const { categories, links } = useData();
   const sortedApps = [...apps].sort((a, b) => a.name.localeCompare(b.name));
+  const appById = new Map(apps.map((a) => [a.id, a]));
+  const nameOf = (id: string) => appById.get(id)?.name ?? id;
+  // Only links with a stable id (from the API) can be targeted for an edit.
+  const editableLinks = links.filter((l) => l.id != null);
+  const linkById = new Map(editableLinks.map((l) => [l.id as number, l]));
+  // When opened for a specific app, only offer that app's links to edit.
+  const linkOptions = initialApp
+    ? editableLinks.filter((l) => l.source_id === initialApp.id || l.target_id === initialApp.id)
+    : editableLinks;
 
   const [kind, setKind] = useState<SuggestionKind>('correction');
   // Correction state.
@@ -66,6 +75,10 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
   const [targetId, setTargetId] = useState('');
   const [relationship, setRelationship] = useState<Relationship>('feeds');
   const [linkDescription, setLinkDescription] = useState('');
+  // Edit-link state.
+  const [editLinkId, setEditLinkId] = useState<number | null>(null);
+  const [editRelationship, setEditRelationship] = useState<Relationship>('feeds');
+  const [editDescription, setEditDescription] = useState('');
   // Common.
   const [comment, setComment] = useState('');
   const [submitter, setSubmitter] = useState('');
@@ -80,6 +93,9 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
   if (isOpen && !wasOpen) {
     setWasOpen(true);
     const start = initialApp ?? sortedApps[0] ?? null;
+    // Default the edit-link picker to the first offered link (already scoped to
+    // the opened app, if any).
+    const startLink = linkOptions[0] ?? null;
     setKind('correction');
     setAppId(start?.id ?? '');
     setField('description');
@@ -88,6 +104,9 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
     setTargetId('');
     setRelationship('feeds');
     setLinkDescription('');
+    setEditLinkId(startLink?.id ?? null);
+    setEditRelationship(startLink?.relationship ?? 'feeds');
+    setEditDescription(startLink?.description ?? '');
     setComment('');
     setSubmitter('');
     setError(null);
@@ -96,7 +115,6 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
     setWasOpen(false);
   }
 
-  const appById = new Map(apps.map((a) => [a.id, a]));
   const fieldMeta = FIELDS.find((f) => f.key === field) ?? FIELDS[0];
 
   // Reset the proposed value to the field's current value when app/field change.
@@ -110,6 +128,15 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
     const a = appById.get(appId);
     if (a) setValue(fieldValue(a, key));
   };
+  const onEditLinkChange = (idStr: string) => {
+    const id = Number(idStr);
+    setEditLinkId(id);
+    const l = linkById.get(id);
+    if (l) {
+      setEditRelationship(l.relationship);
+      setEditDescription(l.description ?? '');
+    }
+  };
 
   const submit = async () => {
     setError(null);
@@ -117,6 +144,16 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
     if (kind === 'correction') {
       if (!appId) return setError('Pick the application to correct.');
       input = { kind, app_id: appId, field, value, comment, submitter };
+    } else if (kind === 'edit_link') {
+      if (editLinkId == null) return setError('Pick a link to edit.');
+      input = {
+        kind,
+        link_id: editLinkId,
+        relationship: editRelationship,
+        link_description: editDescription,
+        comment,
+        submitter,
+      };
     } else {
       if (!sourceId || !targetId) return setError('Pick both applications for the link.');
       if (sourceId === targetId) return setError('A link must connect two different applications.');
@@ -230,6 +267,7 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
               >
                 <Radio label="Correct a detail" value="correction" />
                 <Radio label="Add a missing link" value="new_link" />
+                <Radio label="Edit a link" value="edit_link" disabled={linkOptions.length === 0} />
               </RadioGroup>
             </FormGroup>
 
@@ -256,6 +294,45 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
                   </FormGroup>
                 </div>
                 <FormGroup label="Proposed value">{renderValueControl()}</FormGroup>
+              </>
+            ) : kind === 'edit_link' ? (
+              <>
+                <FormGroup label="Link">
+                  <HTMLSelect
+                    fill
+                    value={editLinkId ?? ''}
+                    onChange={(e) => onEditLinkChange(e.currentTarget.value)}
+                  >
+                    {linkOptions.map((l) => (
+                      <option key={l.id} value={l.id as number}>
+                        {nameOf(l.source_id)} → {nameOf(l.target_id)}
+                        {` (${RELATIONSHIP_VERBS[l.relationship].out})`}
+                      </option>
+                    ))}
+                  </HTMLSelect>
+                </FormGroup>
+                <div className="edit-row">
+                  <FormGroup label="Relationship" className="edit-col">
+                    <HTMLSelect
+                      fill
+                      value={editRelationship}
+                      onChange={(e) => setEditRelationship(e.currentTarget.value as Relationship)}
+                    >
+                      {RELATIONSHIPS.map((r) => (
+                        <option key={r} value={r}>
+                          {RELATIONSHIP_VERBS[r].out}
+                        </option>
+                      ))}
+                    </HTMLSelect>
+                  </FormGroup>
+                </div>
+                <FormGroup label="Description" labelInfo="(optional)">
+                  <InputGroup
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    placeholder="e.g. Streams events into the pipeline"
+                  />
+                </FormGroup>
               </>
             ) : (
               <>

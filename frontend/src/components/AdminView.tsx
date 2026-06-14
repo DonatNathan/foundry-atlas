@@ -407,6 +407,7 @@ export default function AdminView({
             nameOf={nameOf}
             dotColor={dotColor}
             categoryName={(id) => categoryById.get(id)?.name ?? id}
+            linkById={(id) => links.find((l) => l.id === id)}
             onApprove={onApproveSuggestion}
             onReject={onRejectSuggestion}
           />
