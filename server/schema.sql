@@ -1,6 +1,7 @@
 -- Palantir Foundry Application Map — PostgreSQL schema.
 -- The deployed source of truth. Seeded from frontend/src/data/graph.json by seed.mjs.
 
+DROP TABLE IF EXISTS suggestion;
 DROP TABLE IF EXISTS application_link;
 DROP TABLE IF EXISTS application;
 DROP TABLE IF EXISTS category;
@@ -45,3 +46,35 @@ CREATE TABLE application_link (
 
 CREATE INDEX idx_link_source ON application_link(source_id);
 CREATE INDEX idx_link_target ON application_link(target_id);
+
+-- Community-submitted corrections / new links, written via a PUBLIC endpoint and
+-- moderated in the Admin tab. Approving a row applies the change; rejecting just
+-- marks it resolved. This crowdsources accuracy without weakening admin-write.
+-- (Kept in sync with ensureSuggestionTable() in index.mjs, which creates this
+-- idempotently on startup so existing deployments don't need a destructive reseed.)
+CREATE TABLE suggestion (
+  id           SERIAL PRIMARY KEY,
+  kind         TEXT NOT NULL CHECK (kind IN ('new_link', 'correction')),
+  status       TEXT NOT NULL DEFAULT 'pending'
+                 CHECK (status IN ('pending', 'approved', 'rejected')),
+
+  -- Correction payload (NULL for new_link): propose a new value for one column
+  -- of one application.
+  app_id       TEXT REFERENCES application(id) ON DELETE CASCADE,
+  field        TEXT,
+  value        TEXT,
+
+  -- New-link payload (NULL for correction).
+  source_id        TEXT REFERENCES application(id) ON DELETE CASCADE,
+  target_id        TEXT REFERENCES application(id) ON DELETE CASCADE,
+  relationship     TEXT,
+  link_description TEXT,
+
+  -- Common metadata.
+  comment      TEXT,                 -- submitter's rationale (optional)
+  submitter    TEXT,                 -- submitter's name / handle (optional)
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  resolved_at  TIMESTAMPTZ
+);
+
+CREATE INDEX idx_suggestion_status ON suggestion(status, created_at);

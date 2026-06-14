@@ -360,6 +360,282 @@ app.delete('/api/links/:id', requireAdmin, async (req, res, next) => {
   }
 });
 
+// ---- suggestions (public create, admin moderation) -------------------------
+//
+// The community is read-only, but they know Foundry. They can submit a proposed
+// new link or a field correction here without a token; an admin then approves
+// (which APPLIES the change) or rejects in the Admin tab.
+
+const SUGGESTION_COLUMNS = `id, kind, status, app_id, field, value,
+  source_id, target_id, relationship, link_description, comment, submitter,
+  created_at, resolved_at`;
+
+// Created idempotently on startup so existing deployments pick up the feature
+// without a destructive reseed. Canonical definition lives in schema.sql.
+const ensureSuggestionTable = async () => {
+  await query(`
+    CREATE TABLE IF NOT EXISTS suggestion (
+      id           SERIAL PRIMARY KEY,
+      kind         TEXT NOT NULL CHECK (kind IN ('new_link', 'correction')),
+      status       TEXT NOT NULL DEFAULT 'pending'
+                     CHECK (status IN ('pending', 'approved', 'rejected')),
+      app_id       TEXT REFERENCES application(id) ON DELETE CASCADE,
+      field        TEXT,
+      value        TEXT,
+      source_id        TEXT REFERENCES application(id) ON DELETE CASCADE,
+      target_id        TEXT REFERENCES application(id) ON DELETE CASCADE,
+      relationship     TEXT,
+      link_description TEXT,
+      comment      TEXT,
+      submitter    TEXT,
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+      resolved_at  TIMESTAMPTZ
+    )
+  `);
+  await query('CREATE INDEX IF NOT EXISTS idx_suggestion_status ON suggestion(status, created_at)');
+};
+
+// Fields a correction may target — the same set an admin can edit directly.
+const CORRECTABLE = new Set(EDITABLE);
+const NULLABLE_FIELDS = new Set(['learning_order', 'era', 'docs_url', 'tips']);
+const MAX = { value: 4000, comment: 1000, submitter: 120, description: 600 };
+
+const trimOrNull = (v) => {
+  if (v === undefined || v === null) return null;
+  const s = String(v).trim();
+  return s === '' ? null : s;
+};
+
+// Validate & coerce a correction's proposed value for one application column.
+// Returns { value } (the value to store/apply) or { error }.
+const coerceCorrection = (field, raw) => {
+  if (field === 'tier') {
+    if (!TIERS.has(raw)) return { error: `Invalid tier: ${raw}` };
+    return { value: raw };
+  }
+  if (field === 'status') {
+    if (!STATUSES.has(raw)) return { error: `Invalid status: ${raw}` };
+    return { value: raw };
+  }
+  if (field === 'is_core') {
+    if (raw === true || raw === 'true') return { value: true };
+    if (raw === false || raw === 'false') return { value: false };
+    return { error: 'is_core must be true or false.' };
+  }
+  if (field === 'learning_order') {
+    const s = trimOrNull(raw);
+    if (s === null) return { value: null };
+    const n = Number(s);
+    if (!Number.isInteger(n) || n < 0) return { error: 'learning_order must be a non-negative integer.' };
+    return { value: n };
+  }
+  // Text columns.
+  const s = trimOrNull(raw);
+  if (s === null && !NULLABLE_FIELDS.has(field)) {
+    return { error: `${field} cannot be empty.` };
+  }
+  if (s !== null && s.length > MAX.value) {
+    return { error: `${field} is too long (max ${MAX.value} characters).` };
+  }
+  return { value: s };
+};
+
+// Confirm the referenced application id(s) exist; returns a list of missing ids.
+const missingApps = async (ids) => {
+  const unique = [...new Set(ids.filter(Boolean))];
+  if (unique.length === 0) return [];
+  const found = await query('SELECT id FROM application WHERE id = ANY($1)', [unique]);
+  const have = new Set(found.rows.map((r) => r.id));
+  return unique.filter((id) => !have.has(id));
+};
+
+// Public: submit a suggestion. No token required.
+app.post('/api/suggestions', async (req, res, next) => {
+  try {
+    const b = req.body ?? {};
+    const kind = b.kind;
+    if (kind !== 'new_link' && kind !== 'correction') {
+      return res.status(400).json({ error: "kind must be 'new_link' or 'correction'." });
+    }
+
+    const comment = trimOrNull(b.comment);
+    const submitter = trimOrNull(b.submitter);
+    if (comment && comment.length > MAX.comment) {
+      return res.status(400).json({ error: `Comment is too long (max ${MAX.comment}).` });
+    }
+    if (submitter && submitter.length > MAX.submitter) {
+      return res.status(400).json({ error: `Name is too long (max ${MAX.submitter}).` });
+    }
+
+    let row;
+    if (kind === 'correction') {
+      const appId = trimOrNull(b.app_id);
+      const field = trimOrNull(b.field);
+      if (!appId) return res.status(400).json({ error: 'app_id is required for a correction.' });
+      if (!field || !CORRECTABLE.has(field)) {
+        return res.status(400).json({ error: `field must be one of: ${[...CORRECTABLE].join(', ')}` });
+      }
+      const coerced = coerceCorrection(field, b.value);
+      if (coerced.error) return res.status(400).json({ error: coerced.error });
+
+      const missing = await missingApps([appId]);
+      if (missing.length) return res.status(400).json({ error: `Unknown application: ${missing[0]}` });
+
+      const result = await query(
+        `INSERT INTO suggestion (kind, app_id, field, value, comment, submitter)
+         VALUES ('correction', $1, $2, $3, $4, $5)
+         RETURNING ${SUGGESTION_COLUMNS}`,
+        [appId, field, coerced.value === null ? null : String(coerced.value), comment, submitter]
+      );
+      row = result.rows[0];
+    } else {
+      const sourceId = trimOrNull(b.source_id);
+      const targetId = trimOrNull(b.target_id);
+      const relationship = trimOrNull(b.relationship);
+      const linkDesc = trimOrNull(b.link_description);
+      const invalid = validateLink({ source_id: sourceId, target_id: targetId, relationship });
+      if (invalid) return res.status(400).json({ error: invalid });
+      if (linkDesc && linkDesc.length > MAX.description) {
+        return res.status(400).json({ error: `Link description is too long (max ${MAX.description}).` });
+      }
+
+      const missing = await missingApps([sourceId, targetId]);
+      if (missing.length) return res.status(400).json({ error: `Unknown application: ${missing.join(', ')}` });
+
+      const result = await query(
+        `INSERT INTO suggestion (kind, source_id, target_id, relationship, link_description, comment, submitter)
+         VALUES ('new_link', $1, $2, $3, $4, $5, $6)
+         RETURNING ${SUGGESTION_COLUMNS}`,
+        [sourceId, targetId, relationship, linkDesc, comment, submitter]
+      );
+      row = result.rows[0];
+    }
+
+    res.status(201).json(row);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Admin: list suggestions (default: the pending moderation queue, oldest first).
+app.get('/api/suggestions', requireAdmin, async (req, res, next) => {
+  try {
+    const status = req.query.status ?? 'pending';
+    if (!['pending', 'approved', 'rejected', 'all'].includes(status)) {
+      return res.status(400).json({ error: `Invalid status filter: ${status}` });
+    }
+    const result =
+      status === 'all'
+        ? await query(`SELECT ${SUGGESTION_COLUMNS} FROM suggestion ORDER BY created_at DESC`)
+        : await query(
+            `SELECT ${SUGGESTION_COLUMNS} FROM suggestion WHERE status = $1 ORDER BY created_at ASC`,
+            [status]
+          );
+    res.json(result.rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Admin: approve a pending suggestion — APPLIES the change, then marks it resolved.
+app.post('/api/suggestions/:id/approve', requireAdmin, async (req, res, next) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid suggestion id.' });
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const found = await client.query(
+      `SELECT ${SUGGESTION_COLUMNS} FROM suggestion WHERE id = $1 FOR UPDATE`,
+      [id]
+    );
+    if (found.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: `Suggestion not found: ${id}` });
+    }
+    const s = found.rows[0];
+    if (s.status !== 'pending') {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: `Suggestion already ${s.status}.` });
+    }
+
+    if (s.kind === 'correction') {
+      if (!s.app_id) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'The target application no longer exists.' });
+      }
+      if (!CORRECTABLE.has(s.field)) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: `Field is no longer editable: ${s.field}` });
+      }
+      const coerced = coerceCorrection(s.field, s.value);
+      if (coerced.error) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: coerced.error });
+      }
+      const upd = await client.query(
+        `UPDATE application SET ${s.field} = $2, updated_at = now() WHERE id = $1`,
+        [s.app_id, coerced.value]
+      );
+      if (upd.rowCount === 0) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'The target application no longer exists.' });
+      }
+    } else {
+      if (!s.source_id || !s.target_id) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'A linked application no longer exists.' });
+      }
+      try {
+        await client.query(
+          `INSERT INTO application_link (source_id, target_id, relationship, description)
+           VALUES ($1, $2, $3, $4)`,
+          [s.source_id, s.target_id, s.relationship, s.link_description]
+        );
+      } catch (e) {
+        await client.query('ROLLBACK');
+        if (e.code === '23505') return res.status(409).json({ error: 'That exact link already exists.' });
+        if (e.code === '23503') return res.status(409).json({ error: 'source or target application no longer exists.' });
+        if (e.code === '23514') return res.status(400).json({ error: 'Invalid relationship.' });
+        throw e;
+      }
+    }
+
+    const resolved = await client.query(
+      `UPDATE suggestion SET status = 'approved', resolved_at = now() WHERE id = $1
+       RETURNING ${SUGGESTION_COLUMNS}`,
+      [id]
+    );
+    await client.query('COMMIT');
+    res.json({ ok: true, suggestion: resolved.rows[0] });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    next(err);
+  } finally {
+    client.release();
+  }
+});
+
+// Admin: reject a pending suggestion (marks it resolved; applies nothing).
+app.post('/api/suggestions/:id/reject', requireAdmin, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid suggestion id.' });
+    const result = await query(
+      `UPDATE suggestion SET status = 'rejected', resolved_at = now()
+       WHERE id = $1 AND status = 'pending'
+       RETURNING ${SUGGESTION_COLUMNS}`,
+      [id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(409).json({ error: 'Suggestion not found or already resolved.' });
+    }
+    res.json({ ok: true, suggestion: result.rows[0] });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ---- static frontend (production) ------------------------------------------
 
 const dist = join(here, '..', 'frontend', 'dist');
@@ -375,4 +651,9 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Internal server error.' });
 });
 
-app.listen(PORT, () => console.log(`Foundry Atlas API listening on :${PORT}`));
+ensureSuggestionTable()
+  .then(() => app.listen(PORT, () => console.log(`Foundry Atlas API listening on :${PORT}`)))
+  .catch((err) => {
+    console.error('Failed to ensure the suggestion table exists:', err);
+    process.exit(1);
+  });

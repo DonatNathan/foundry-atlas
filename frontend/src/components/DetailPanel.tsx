@@ -17,6 +17,8 @@ interface DetailPanelProps {
   filters: Filters;
   onSelect: (id: string) => void;
   onClose: () => void;
+  /** Open the suggestion form pre-filled with this app (omitted in embeds). */
+  onSuggest?: () => void;
 }
 
 interface Connection {
@@ -25,7 +27,7 @@ interface Connection {
   desc: string | null;
 }
 
-export default function DetailPanel({ app, filters, onSelect, onClose }: DetailPanelProps) {
+export default function DetailPanel({ app, filters, onSelect, onClose, onSuggest }: DetailPanelProps) {
   const { categories, categoryById, colorOf, links } = useData();
   const category = categoryById.get(app.category_id);
   const color = colorOf(app);
@@ -166,6 +168,21 @@ export default function DetailPanel({ app, filters, onSelect, onClose }: DetailP
             </li>
           ))}
         </ul>
+
+        {onSuggest && (
+          <>
+            <Divider />
+            <Button
+              variant="minimal"
+              icon="lightbulb"
+              className="suggest-link"
+              fill
+              onClick={onSuggest}
+            >
+              Suggest a correction or link
+            </Button>
+          </>
+        )}
       </div>
     </aside>
   );

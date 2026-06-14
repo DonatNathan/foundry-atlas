@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Alert, Button, HTMLTable, Icon, InputGroup, Tag } from '@blueprintjs/core';
-import type { Application, AppLink, Category } from '../types';
+import type { Application, AppLink, Category, Suggestion } from '../types';
 import { STATUS_LABELS, TIER_LABELS } from '../data';
 import { useData } from '../DataContext';
 import EditAppDialog from './EditAppDialog';
 import CategoryDialog from './CategoryDialog';
 import LinkDialog from './LinkDialog';
+import SuggestionQueue from './SuggestionQueue';
 
 interface AdminViewProps {
   apps: Application[];
@@ -18,9 +19,12 @@ interface AdminViewProps {
   onCreateLink: (l: AppLink) => Promise<void>;
   onUpdateLink: (l: AppLink) => Promise<void>;
   onDeleteLink: (l: AppLink) => Promise<void>;
+  suggestions: Suggestion[];
+  onApproveSuggestion: (s: Suggestion) => Promise<void>;
+  onRejectSuggestion: (s: Suggestion) => Promise<void>;
 }
 
-type Section = 'apps' | 'categories' | 'links';
+type Section = 'apps' | 'categories' | 'links' | 'suggestions';
 type AppEditing = { app: Application; mode: 'create' | 'edit' };
 type CatEditing = { category: Category; mode: 'create' | 'edit' };
 type LinkEditing = { link: AppLink; mode: 'create' | 'edit' };
@@ -36,6 +40,9 @@ export default function AdminView({
   onCreateLink,
   onUpdateLink,
   onDeleteLink,
+  suggestions,
+  onApproveSuggestion,
+  onRejectSuggestion,
 }: AdminViewProps) {
   const { categories, categoryById, colorOf, links } = useData();
 
@@ -168,14 +175,16 @@ export default function AdminView({
         text="New category"
         onClick={() => setCatEditing({ category: blankCategory(), mode: 'create' })}
       />
-    ) : (
+    ) : section === 'links' ? (
       <Button
         icon="add"
         intent="primary"
         text="New link"
         onClick={() => setLinkEditing({ link: blankLink(), mode: 'create' })}
       />
-    );
+    ) : null;
+
+  const searchable = section === 'apps' || section === 'links';
 
   return (
     <div className="admin-view bp6-dark">
@@ -189,9 +198,9 @@ export default function AdminView({
         <div className="admin-view-actions">
           <InputGroup
             leftIcon="search"
-            placeholder={section === 'categories' ? 'Categories aren’t searchable…' : 'Search…'}
+            placeholder={searchable ? 'Search…' : 'Search isn’t available here…'}
             value={query}
-            disabled={section === 'categories'}
+            disabled={!searchable}
             onChange={(e) => setQuery(e.target.value)}
             round
           />
@@ -211,6 +220,17 @@ export default function AdminView({
         </button>
         <button className={section === 'links' ? 'active' : ''} onClick={() => setSection('links')}>
           Links
+        </button>
+        <button
+          className={section === 'suggestions' ? 'active' : ''}
+          onClick={() => setSection('suggestions')}
+        >
+          Suggestions
+          {suggestions.length > 0 && (
+            <Tag round intent="warning" minimal className="section-badge">
+              {suggestions.length}
+            </Tag>
+          )}
         </button>
       </div>
 
@@ -379,6 +399,17 @@ export default function AdminView({
               ))}
             </tbody>
           </HTMLTable>
+        )}
+
+        {section === 'suggestions' && (
+          <SuggestionQueue
+            suggestions={suggestions}
+            nameOf={nameOf}
+            dotColor={dotColor}
+            categoryName={(id) => categoryById.get(id)?.name ?? id}
+            onApprove={onApproveSuggestion}
+            onReject={onRejectSuggestion}
+          />
         )}
       </div>
 

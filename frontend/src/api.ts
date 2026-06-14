@@ -1,4 +1,11 @@
-import type { Application, AppLink, Category, GraphPayload } from './types';
+import type {
+  Application,
+  AppLink,
+  Category,
+  GraphPayload,
+  Suggestion,
+  SuggestionInput,
+} from './types';
 
 // Where the API lives. Empty in dev (the Vite proxy forwards /api to the local
 // server); set VITE_API_BASE to the API origin in production, e.g.
@@ -165,5 +172,54 @@ export async function deleteLink(id: number, token: string): Promise<void> {
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error ?? `Delete failed (${res.status})`);
+  }
+}
+
+// ---- suggestions -----------------------------------------------------------
+
+/** Submit a community suggestion (correction or new link). No token required. */
+export async function submitSuggestion(input: SuggestionInput): Promise<Suggestion> {
+  const res = await fetch(url('/api/suggestions'), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Could not submit suggestion (${res.status})`);
+  }
+  return res.json();
+}
+
+/** Fetch the pending moderation queue. Requires a valid admin token. */
+export async function fetchSuggestions(token: string): Promise<Suggestion[]> {
+  const res = await fetch(url('/api/suggestions?status=pending'), {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`Failed to load suggestions (${res.status})`);
+  return res.json();
+}
+
+/** Approve a suggestion (applies the change). Requires a valid admin token. */
+export async function approveSuggestion(id: number, token: string): Promise<void> {
+  const res = await fetch(url(`/api/suggestions/${id}/approve`), {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Approve failed (${res.status})`);
+  }
+}
+
+/** Reject a suggestion. Requires a valid admin token. */
+export async function rejectSuggestion(id: number, token: string): Promise<void> {
+  const res = await fetch(url(`/api/suggestions/${id}/reject`), {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Reject failed (${res.status})`);
   }
 }
