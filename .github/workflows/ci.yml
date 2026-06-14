@@ -42,3 +42,30 @@ jobs:
       - run: npm ci
       # No test suite yet; this verifies the server installs and resolves cleanly.
       - run: node --check index.mjs
+
+  deploy:
+    name: Deploy API to VPS
+    # Only after lint/build pass, and only on a push (merge) to main.
+    needs: [frontend, server]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Never let two deploys run at once; cancel an in-flight one if a newer
+    # commit lands.
+    concurrency:
+      group: deploy-vps
+      cancel-in-progress: true
+    steps:
+      - name: Pull, rebuild & restart the API container over SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.VPS_PROJECT_PATH }}"
+            git fetch --all
+            git reset --hard origin/main
+            docker compose up -d --build foundry-api
+            docker image prune -f
