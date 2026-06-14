@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { Application, AppLink, Category } from './types';
+import type { Application, AppLink, AppResource, Category } from './types';
 
 export interface DataContextValue {
   categories: Category[];
@@ -13,6 +13,9 @@ export interface DataContextValue {
   neighbors: Map<string, Set<string>>;
   /** Number of distinct neighbors an application has. */
   degreeOf: (id: string) => number;
+  resources: AppResource[];
+  /** Learning resources for an application, in display order. */
+  resourcesOf: (appId: string) => AppResource[];
 }
 
 export const DataContext = createContext<DataContextValue | null>(null);

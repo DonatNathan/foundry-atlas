@@ -1,4 +1,13 @@
-import type { Application, AppLink, Category, GraphPayload } from './types';
+import type {
+  Application,
+  AppLink,
+  AppResource,
+  Category,
+  GraphPayload,
+  Suggestion,
+  SuggestionInput,
+  SuggestionStatus,
+} from './types';
 
 // Where the API lives. Empty in dev (the Vite proxy forwards /api to the local
 // server); set VITE_API_BASE to the API origin in production, e.g.
@@ -165,5 +174,107 @@ export async function deleteLink(id: number, token: string): Promise<void> {
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error ?? `Delete failed (${res.status})`);
+  }
+}
+
+// ---- learning resources ----------------------------------------------------
+
+const resourceBody = (r: AppResource) => ({
+  app_id: r.app_id,
+  kind: r.kind,
+  title: r.title,
+  url: r.url,
+  sort: r.sort,
+});
+
+async function readResource(res: Response, fallback: string): Promise<AppResource> {
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `${fallback} (${res.status})`);
+  }
+  return res.json();
+}
+
+/** Create a learning resource. Requires a valid admin token. */
+export async function createResource(resource: AppResource, token: string): Promise<AppResource> {
+  const res = await fetch(url('/api/resources'), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify(resourceBody(resource)),
+  });
+  return readResource(res, 'Create failed');
+}
+
+/** Update a learning resource by id. Requires a valid admin token. */
+export async function updateResource(resource: AppResource, token: string): Promise<AppResource> {
+  const res = await fetch(url(`/api/resources/${resource.id}`), {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify(resourceBody(resource)),
+  });
+  return readResource(res, 'Save failed');
+}
+
+/** Delete a learning resource by id. Requires a valid admin token. */
+export async function deleteResource(id: number, token: string): Promise<void> {
+  const res = await fetch(url(`/api/resources/${id}`), {
+    method: 'DELETE',
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Delete failed (${res.status})`);
+  }
+}
+
+// ---- suggestions -----------------------------------------------------------
+
+/** Submit a community suggestion (correction or new link). No token required. */
+export async function submitSuggestion(input: SuggestionInput): Promise<Suggestion> {
+  const res = await fetch(url('/api/suggestions'), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Could not submit suggestion (${res.status})`);
+  }
+  return res.json();
+}
+
+/** Fetch suggestions by status (default: the pending queue). Requires a token. */
+export async function fetchSuggestions(
+  token: string,
+  status: SuggestionStatus = 'pending'
+): Promise<Suggestion[]> {
+  const res = await fetch(url(`/api/suggestions?status=${status}`), {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`Failed to load suggestions (${res.status})`);
+  return res.json();
+}
+
+/** Approve a suggestion (applies the change). Requires a valid admin token. */
+export async function approveSuggestion(id: number, token: string): Promise<void> {
+  const res = await fetch(url(`/api/suggestions/${id}/approve`), {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Approve failed (${res.status})`);
+  }
+}
+
+/** Reject a suggestion. Requires a valid admin token. */
+export async function rejectSuggestion(id: number, token: string): Promise<void> {
+  const res = await fetch(url(`/api/suggestions/${id}/reject`), {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Reject failed (${res.status})`);
   }
 }

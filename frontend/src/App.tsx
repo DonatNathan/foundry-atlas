@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Icon } from '@blueprintjs/core';
+import { Button, Icon, Tooltip } from '@blueprintjs/core';
 import GraphView from './components/GraphView';
 import DetailPanel from './components/DetailPanel';
 import Sidebar from './components/Sidebar';
@@ -10,22 +10,34 @@ import ShareButton from './components/ShareButton';
 import EmbedButton from './components/EmbedButton';
 import EmbedFrame from './components/EmbedFrame';
 import EmbedCard from './components/EmbedCard';
+import SuggestDialog from './components/SuggestDialog';
 import { DataProvider } from './DataProvider';
 import { buildShareQuery, parseEmbedMode, parseShareState } from './urlState';
-import { applications, categories as seedCategories, links as seedLinks } from './data';
 import {
+  applications,
+  categories as seedCategories,
+  links as seedLinks,
+  resources as seedResources,
+} from './data';
+import {
+  approveSuggestion,
   createApplication,
   createCategory,
   createLink,
+  createResource,
   deleteApplication,
   deleteCategory,
   deleteLink,
+  deleteResource,
   fetchGraph,
+  fetchSuggestions,
+  rejectSuggestion,
   updateApplication,
   updateCategory,
   updateLink,
+  updateResource,
 } from './api';
-import type { Application, AppLink, Category, Filters } from './types';
+import type { Application, AppLink, AppResource, Category, Filters, Suggestion } from './types';
 
 type View = 'map' | 'table' | 'admin';
 
@@ -46,21 +58,42 @@ export default function App() {
   const [apps, setApps] = useState<Application[]>(applications);
   const [categories, setCategories] = useState<Category[]>(seedCategories);
   const [links, setLinks] = useState<AppLink[]>(seedLinks);
+  const [resources, setResources] = useState<AppResource[]>(seedResources);
   const [adminToken, setAdminToken] = useState<string | null>(
     () => localStorage.getItem(TOKEN_KEY)
   );
   const [filters, setFilters] = useState<Filters>(initialState.filters);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [suggestApp, setSuggestApp] = useState<Application | null>(null);
 
-  // Load the live data from the backend on mount (source of truth).
-  useEffect(() => {
+  const refreshGraph = () =>
     fetchGraph()
       .then((g) => {
         setApps(g.applications);
         setCategories(g.categories);
         setLinks(g.links);
+        setResources(g.resources ?? []);
       })
       .catch((e) => console.warn('Falling back to bundled data:', e));
+
+  // Load the live data from the backend on mount (source of truth).
+  useEffect(() => {
+    refreshGraph();
   }, []);
+
+  // Load the moderation queue whenever an admin token is present. (The list is
+  // cleared on lock in handleLock, not here, to avoid a synchronous setState.)
+  useEffect(() => {
+    if (!adminToken) return;
+    let cancelled = false;
+    fetchSuggestions(adminToken)
+      .then((s) => !cancelled && setSuggestions(s))
+      .catch(() => !cancelled && setSuggestions([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [adminToken]);
 
   // Keep the category filter coherent as categories are added/removed: new
   // categories show by default, deleted ones drop out of the filter set.
@@ -176,6 +209,39 @@ export default function App() {
     setLinks((prev) => prev.filter((x) => x.id !== l.id));
   };
 
+  const handleCreateResource = async (r: AppResource) => {
+    const saved = await createResource(r, requireToken());
+    setResources((prev) => [...prev, saved]);
+  };
+
+  const handleUpdateResource = async (r: AppResource) => {
+    const saved = await updateResource(r, requireToken());
+    setResources((prev) => prev.map((x) => (x.id === saved.id ? saved : x)));
+  };
+
+  const handleDeleteResource = async (r: AppResource) => {
+    if (r.id == null) throw new Error('This resource has no id and cannot be deleted.');
+    await deleteResource(r.id, requireToken());
+    setResources((prev) => prev.filter((x) => x.id !== r.id));
+  };
+
+  const handleApproveSuggestion = async (s: Suggestion) => {
+    await approveSuggestion(s.id, requireToken());
+    setSuggestions((prev) => prev.filter((x) => x.id !== s.id));
+    // Approval changed the graph (a new link or a field correction) — re-pull it.
+    await refreshGraph();
+  };
+
+  const handleRejectSuggestion = async (s: Suggestion) => {
+    await rejectSuggestion(s.id, requireToken());
+    setSuggestions((prev) => prev.filter((x) => x.id !== s.id));
+  };
+
+  const openSuggest = (app: Application | null) => {
+    setSuggestApp(app);
+    setSuggestOpen(true);
+  };
+
   const handleUnlock = (token: string) => {
     localStorage.setItem(TOKEN_KEY, token);
     setAdminToken(token);
@@ -184,12 +250,13 @@ export default function App() {
   const handleLock = () => {
     localStorage.removeItem(TOKEN_KEY);
     setAdminToken(null);
+    setSuggestions([]);
     if (view === 'admin') setView('map');
   };
 
   if (embedMode) {
     return (
-      <DataProvider categories={categories} links={links}>
+      <DataProvider categories={categories} links={links} resources={resources}>
         {embedMode === 'card' ? (
           <EmbedCard app={selectedApp} filters={filters} backHref={backHref} />
         ) : (
@@ -207,7 +274,7 @@ export default function App() {
   }
 
   return (
-    <DataProvider categories={categories} links={links}>
+    <DataProvider categories={categories} links={links} resources={resources}>
       <div className="app bp6-dark">
         <div className="top-bar">
           <div className="view-tabs">
@@ -228,6 +295,16 @@ export default function App() {
                 <Icon icon="cog" size={14} /> Admin
               </button>
             )}
+          </div>
+          <div className="top-action">
+            <Tooltip content="Suggest a correction or new link" placement="bottom">
+              <Button
+                variant="minimal"
+                icon="lightbulb"
+                text="Suggest"
+                onClick={() => openSuggest(selectedApp)}
+              />
+            </Tooltip>
           </div>
           <ShareButton />
           <EmbedButton
@@ -262,6 +339,13 @@ export default function App() {
             onCreateLink={handleCreateLink}
             onUpdateLink={handleUpdateLink}
             onDeleteLink={handleDeleteLink}
+            onCreateResource={handleCreateResource}
+            onUpdateResource={handleUpdateResource}
+            onDeleteResource={handleDeleteResource}
+            suggestions={suggestions}
+            onApproveSuggestion={handleApproveSuggestion}
+            onRejectSuggestion={handleRejectSuggestion}
+            onFetchSuggestions={(status) => fetchSuggestions(requireToken(), status)}
           />
         )}
 
@@ -279,8 +363,16 @@ export default function App() {
             filters={filters}
             onSelect={setSelectedId}
             onClose={() => setSelectedId(null)}
+            onSuggest={() => openSuggest(selectedApp)}
           />
         )}
+
+        <SuggestDialog
+          isOpen={suggestOpen}
+          apps={apps}
+          initialApp={suggestApp}
+          onClose={() => setSuggestOpen(false)}
+        />
       </div>
     </DataProvider>
   );

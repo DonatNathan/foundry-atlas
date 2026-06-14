@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AnchorButton, Button, Callout, Divider, Tag } from '@blueprintjs/core';
+import { AnchorButton, Button, Callout, Divider, Icon, Tag } from '@blueprintjs/core';
 import type { Application, Filters } from '../types';
 import {
   appById,
@@ -17,6 +17,8 @@ interface DetailPanelProps {
   filters: Filters;
   onSelect: (id: string) => void;
   onClose: () => void;
+  /** Open the suggestion form pre-filled with this app (omitted in embeds). */
+  onSuggest?: () => void;
 }
 
 interface Connection {
@@ -25,8 +27,27 @@ interface Connection {
   desc: string | null;
 }
 
-export default function DetailPanel({ app, filters, onSelect, onClose }: DetailPanelProps) {
-  const { categories, categoryById, colorOf, links } = useData();
+// Extract the YouTube video id from common URL shapes so we can show a thumbnail.
+function youtubeId(rawUrl: string): string | null {
+  try {
+    const u = new URL(rawUrl);
+    if (u.hostname === 'youtu.be') return u.pathname.slice(1) || null;
+    if (u.hostname.endsWith('youtube.com')) {
+      if (u.pathname === '/watch') return u.searchParams.get('v');
+      const m = u.pathname.match(/^\/(?:embed|shorts)\/([^/?]+)/);
+      if (m) return m[1];
+    }
+  } catch {
+    /* not a parseable URL */
+  }
+  return null;
+}
+
+export default function DetailPanel({ app, filters, onSelect, onClose, onSuggest }: DetailPanelProps) {
+  const { categories, categoryById, colorOf, links, resourcesOf } = useData();
+  const resources = resourcesOf(app.id);
+  const tutorials = resources.filter((r) => r.kind === 'tutorial');
+  const videos = resources.filter((r) => r.kind === 'video');
   const category = categoryById.get(app.category_id);
   const color = colorOf(app);
   const [exporting, setExporting] = useState(false);
@@ -143,6 +164,64 @@ export default function DetailPanel({ app, filters, onSelect, onClose }: DetailP
           </AnchorButton>
         )}
 
+        {resources.length > 0 && (
+          <>
+            <Divider />
+            {tutorials.length > 0 && (
+              <>
+                <h4>Foundry tutorials</h4>
+                <ul className="resource-list">
+                  {tutorials.map((r) => (
+                    <li key={r.id}>
+                      <a className="resource-link" href={r.url} target="_blank" rel="noreferrer">
+                        <Icon icon="learning" size={14} />
+                        <span className="resource-title">{r.title}</span>
+                        <Icon icon="share" size={11} />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {videos.length > 0 && (
+              <>
+                <h4>Videos</h4>
+                <div className="resource-videos">
+                  {videos.map((r) => {
+                    const id = youtubeId(r.url);
+                    return (
+                      <a
+                        key={r.id}
+                        className="resource-video"
+                        href={r.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={r.title}
+                      >
+                        <span className="resource-thumb">
+                          {id ? (
+                            <img
+                              src={`https://i.ytimg.com/vi/${id}/mqdefault.jpg`}
+                              alt=""
+                              loading="lazy"
+                            />
+                          ) : (
+                            <Icon icon="video" size={20} />
+                          )}
+                          <span className="resource-play">
+                            <Icon icon="play" size={16} />
+                          </span>
+                        </span>
+                        <span className="resource-title">{r.title}</span>
+                      </a>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </>
+        )}
+
         <Divider />
 
         <h4>
@@ -166,6 +245,21 @@ export default function DetailPanel({ app, filters, onSelect, onClose }: DetailP
             </li>
           ))}
         </ul>
+
+        {onSuggest && (
+          <>
+            <Divider />
+            <Button
+              variant="minimal"
+              icon="lightbulb"
+              className="suggest-link"
+              fill
+              onClick={onSuggest}
+            >
+              Suggest a correction or link
+            </Button>
+          </>
+        )}
       </div>
     </aside>
   );
