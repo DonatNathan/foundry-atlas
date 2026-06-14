@@ -2,6 +2,7 @@
 -- The deployed source of truth. Seeded from frontend/src/data/graph.json by seed.mjs.
 
 DROP TABLE IF EXISTS suggestion;
+DROP TABLE IF EXISTS app_resource;
 DROP TABLE IF EXISTS application_link;
 DROP TABLE IF EXISTS application;
 DROP TABLE IF EXISTS category;
@@ -46,6 +47,19 @@ CREATE TABLE application_link (
 
 CREATE INDEX idx_link_source ON application_link(source_id);
 CREATE INDEX idx_link_target ON application_link(target_id);
+
+-- Learning resources attached to an application: Foundry-learning tutorial links
+-- and YouTube videos that reference it. Admin-managed; shown in the detail panel.
+CREATE TABLE app_resource (
+  id      SERIAL PRIMARY KEY,
+  app_id  TEXT NOT NULL REFERENCES application(id) ON DELETE CASCADE,
+  kind    TEXT NOT NULL CHECK (kind IN ('tutorial', 'video')),
+  title   TEXT NOT NULL,
+  url     TEXT NOT NULL,
+  sort    INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX idx_resource_app ON app_resource(app_id);
 
 -- Community-submitted corrections / new links, written via a PUBLIC endpoint and
 -- moderated in the Admin tab. Approving a row applies the change; rejecting just

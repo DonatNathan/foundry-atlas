@@ -51,10 +51,19 @@ try {
     );
   }
 
+  for (const r of graph.resources ?? []) {
+    await client.query(
+      `INSERT INTO app_resource (app_id, kind, title, url, sort)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [r.app_id, r.kind, r.title, r.url, r.sort ?? 0]
+    );
+  }
+
   await client.query('COMMIT');
   console.log(
     `Seeded: ${graph.categories.length} categories, ` +
-      `${graph.applications.length} applications, ${graph.links.length} links.`
+      `${graph.applications.length} applications, ${graph.links.length} links, ` +
+      `${(graph.resources ?? []).length} resources.`
   );
 } catch (err) {
   await client.query('ROLLBACK');

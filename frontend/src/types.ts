@@ -44,10 +44,24 @@ export interface AppLink {
   description: string | null;
 }
 
+export type ResourceKind = 'tutorial' | 'video';
+
+/** A learning resource attached to an application (Foundry tutorial or video). */
+export interface AppResource {
+  /** Stable row id from the API (absent in the bundled snapshot). */
+  id?: number;
+  app_id: string;
+  kind: ResourceKind;
+  title: string;
+  url: string;
+  sort: number;
+}
+
 export interface GraphPayload {
   categories: Category[];
   applications: Application[];
   links: AppLink[];
+  resources: AppResource[];
 }
 
 export interface Filters {

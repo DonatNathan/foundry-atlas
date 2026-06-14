@@ -62,7 +62,7 @@ const rowToApp = (r) => ({ ...r, is_core: r.is_core === true });
 
 app.get('/api/graph', async (_req, res, next) => {
   try {
-    const [categories, applications, links] = await Promise.all([
+    const [categories, applications, links, resources] = await Promise.all([
       query('SELECT id, name, color, sort FROM category ORDER BY sort'),
       query(
         `SELECT id, name, category_id, description, use_case, tier, is_core,
@@ -72,11 +72,13 @@ app.get('/api/graph', async (_req, res, next) => {
       query(
         'SELECT id, source_id, target_id, relationship, description FROM application_link ORDER BY id'
       ),
+      query('SELECT id, app_id, kind, title, url, sort FROM app_resource ORDER BY app_id, sort, id'),
     ]);
     res.json({
       categories: categories.rows,
       applications: applications.rows.map(rowToApp),
       links: links.rows,
+      resources: resources.rows,
     });
   } catch (err) {
     next(err);
@@ -354,6 +356,90 @@ app.delete('/api/links/:id', requireAdmin, async (req, res, next) => {
     if (del.rowCount === 0) {
       return res.status(404).json({ error: `Link not found: ${id}` });
     }
+    res.json({ id });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---- learning resources (admin only) --------------------------------------
+
+// Created idempotently on startup so existing deployments pick up the feature
+// without a destructive reseed. Canonical definition lives in schema.sql.
+const ensureResourceTable = async () => {
+  await query(`
+    CREATE TABLE IF NOT EXISTS app_resource (
+      id      SERIAL PRIMARY KEY,
+      app_id  TEXT NOT NULL REFERENCES application(id) ON DELETE CASCADE,
+      kind    TEXT NOT NULL CHECK (kind IN ('tutorial', 'video')),
+      title   TEXT NOT NULL,
+      url     TEXT NOT NULL,
+      sort    INTEGER NOT NULL DEFAULT 0
+    )
+  `);
+  await query('CREATE INDEX IF NOT EXISTS idx_resource_app ON app_resource(app_id)');
+};
+
+const RESOURCE_KINDS = new Set(['tutorial', 'video']);
+const RESOURCE_COLUMNS = 'id, app_id, kind, title, url, sort';
+const isHttpUrl = (s) => typeof s === 'string' && /^https?:\/\/\S+$/i.test(s.trim());
+
+const validateResource = (b) => {
+  if (!b.app_id || String(b.app_id).trim() === '') return 'app_id is required.';
+  if (!RESOURCE_KINDS.has(b.kind)) return `Invalid kind: ${b.kind}`;
+  if (!b.title || String(b.title).trim() === '') return 'Title is required.';
+  if (!isHttpUrl(b.url)) return 'URL must start with http:// or https://';
+  if (b.sort !== undefined && b.sort !== null && !Number.isInteger(b.sort)) {
+    return 'Sort must be an integer.';
+  }
+  return null;
+};
+
+app.post('/api/resources', requireAdmin, async (req, res, next) => {
+  try {
+    const b = req.body ?? {};
+    const invalid = validateResource(b);
+    if (invalid) return res.status(400).json({ error: invalid });
+    const result = await query(
+      `INSERT INTO app_resource (app_id, kind, title, url, sort)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING ${RESOURCE_COLUMNS}`,
+      [b.app_id, b.kind, b.title.trim(), b.url.trim(), b.sort ?? 0]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    if (err.code === '23503') return res.status(400).json({ error: 'app_id does not exist.' });
+    next(err);
+  }
+});
+
+app.put('/api/resources/:id', requireAdmin, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid resource id.' });
+    const b = req.body ?? {};
+    const invalid = validateResource(b);
+    if (invalid) return res.status(400).json({ error: invalid });
+    const result = await query(
+      `UPDATE app_resource SET app_id = $2, kind = $3, title = $4, url = $5, sort = $6
+       WHERE id = $1
+       RETURNING ${RESOURCE_COLUMNS}`,
+      [id, b.app_id, b.kind, b.title.trim(), b.url.trim(), b.sort ?? 0]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ error: `Resource not found: ${id}` });
+    res.json(result.rows[0]);
+  } catch (err) {
+    if (err.code === '23503') return res.status(400).json({ error: 'app_id does not exist.' });
+    next(err);
+  }
+});
+
+app.delete('/api/resources/:id', requireAdmin, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid resource id.' });
+    const del = await query('DELETE FROM app_resource WHERE id = $1', [id]);
+    if (del.rowCount === 0) return res.status(404).json({ error: `Resource not found: ${id}` });
     res.json({ id });
   } catch (err) {
     next(err);
@@ -702,9 +788,9 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Internal server error.' });
 });
 
-ensureSuggestionTable()
+Promise.all([ensureSuggestionTable(), ensureResourceTable()])
   .then(() => app.listen(PORT, () => console.log(`Foundry Atlas API listening on :${PORT}`)))
   .catch((err) => {
-    console.error('Failed to ensure the suggestion table exists:', err);
+    console.error('Failed to ensure feature tables exist:', err);
     process.exit(1);
   });
