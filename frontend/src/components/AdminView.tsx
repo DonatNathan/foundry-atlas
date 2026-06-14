@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Alert, Button, HTMLTable, Icon, InputGroup, Tag } from '@blueprintjs/core';
-import type { Application, AppLink, Category, Suggestion } from '../types';
+import type { Application, AppLink, Category, Suggestion, SuggestionStatus } from '../types';
 import { STATUS_LABELS, TIER_LABELS } from '../data';
 import { useData } from '../DataContext';
 import EditAppDialog from './EditAppDialog';
@@ -22,6 +22,7 @@ interface AdminViewProps {
   suggestions: Suggestion[];
   onApproveSuggestion: (s: Suggestion) => Promise<void>;
   onRejectSuggestion: (s: Suggestion) => Promise<void>;
+  onFetchSuggestions: (status: SuggestionStatus) => Promise<Suggestion[]>;
 }
 
 type Section = 'apps' | 'categories' | 'links' | 'suggestions';
@@ -43,6 +44,7 @@ export default function AdminView({
   suggestions,
   onApproveSuggestion,
   onRejectSuggestion,
+  onFetchSuggestions,
 }: AdminViewProps) {
   const { categories, categoryById, colorOf, links } = useData();
 
@@ -57,6 +59,29 @@ export default function AdminView({
   const [linkDeleting, setLinkDeleting] = useState<AppLink | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
+
+  // Suggestions sub-filter. Pending uses the live `suggestions` prop (which the
+  // badge and approve/reject mutations track); approved/rejected are fetched
+  // on demand when their tab is opened.
+  const [suggestionStatus, setSuggestionStatus] = useState<SuggestionStatus>('pending');
+  const [resolved, setResolved] = useState<Suggestion[]>([]);
+  const [resolvedLoading, setResolvedLoading] = useState(false);
+  const [resolvedError, setResolvedError] = useState<string | null>(null);
+
+  const showSuggestionStatus = async (status: SuggestionStatus) => {
+    setSuggestionStatus(status);
+    if (status === 'pending') return;
+    setResolvedLoading(true);
+    setResolvedError(null);
+    try {
+      setResolved(await onFetchSuggestions(status));
+    } catch (e) {
+      setResolvedError(e instanceof Error ? e.message : 'Could not load suggestions.');
+      setResolved([]);
+    } finally {
+      setResolvedLoading(false);
+    }
+  };
 
   const appById = useMemo(() => new Map(apps.map((a) => [a.id, a])), [apps]);
   const nameOf = (id: string) => appById.get(id)?.name ?? id;
@@ -402,15 +427,46 @@ export default function AdminView({
         )}
 
         {section === 'suggestions' && (
-          <SuggestionQueue
-            suggestions={suggestions}
-            nameOf={nameOf}
-            dotColor={dotColor}
-            categoryName={(id) => categoryById.get(id)?.name ?? id}
-            linkById={(id) => links.find((l) => l.id === id)}
-            onApprove={onApproveSuggestion}
-            onReject={onRejectSuggestion}
-          />
+          <div className="suggestion-panel">
+            <div className="suggestion-statusbar">
+              {(['pending', 'approved', 'rejected'] as const).map((st) => (
+                <button
+                  key={st}
+                  className={suggestionStatus === st ? 'active' : ''}
+                  onClick={() => showSuggestionStatus(st)}
+                >
+                  {st[0].toUpperCase() + st.slice(1)}
+                  {st === 'pending' && suggestions.length > 0 && (
+                    <Tag round intent="warning" minimal className="section-badge">
+                      {suggestions.length}
+                    </Tag>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {resolvedError && suggestionStatus !== 'pending' && (
+              <p className="admin-delete-error" style={{ padding: '0 12px' }}>
+                {resolvedError}
+              </p>
+            )}
+
+            {suggestionStatus !== 'pending' && resolvedLoading ? (
+              <p className="suggestion-loading">Loading…</p>
+            ) : (
+              <SuggestionQueue
+                suggestions={suggestionStatus === 'pending' ? suggestions : resolved}
+                readOnly={suggestionStatus !== 'pending'}
+                statusFilter={suggestionStatus}
+                nameOf={nameOf}
+                dotColor={dotColor}
+                categoryName={(id) => categoryById.get(id)?.name ?? id}
+                linkById={(id) => links.find((l) => l.id === id)}
+                onApprove={onApproveSuggestion}
+                onReject={onRejectSuggestion}
+              />
+            )}
+          </div>
         )}
       </div>
 

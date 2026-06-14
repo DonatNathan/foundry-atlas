@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { Button, Callout, Icon, Tag } from '@blueprintjs/core';
-import type { AppLink, Suggestion } from '../types';
+import type { AppLink, Suggestion, SuggestionStatus } from '../types';
 import { RELATIONSHIP_VERBS, STATUS_LABELS, TIER_LABELS } from '../data';
 
 interface SuggestionQueueProps {
   suggestions: Suggestion[];
+  /** Read-only history view (approved/rejected): no action buttons. */
+  readOnly?: boolean;
+  statusFilter?: SuggestionStatus;
   nameOf: (id: string) => string;
   dotColor: (id: string) => string;
   categoryName: (id: string) => string;
@@ -32,6 +35,8 @@ const verbOf = (rel: string | null): string =>
 
 export default function SuggestionQueue({
   suggestions,
+  readOnly = false,
+  statusFilter = 'pending',
   nameOf,
   dotColor,
   categoryName,
@@ -67,8 +72,10 @@ export default function SuggestionQueue({
 
   if (suggestions.length === 0) {
     return (
-      <Callout icon="inbox" title="The queue is empty" className="suggestion-empty">
-        Community corrections and new-link suggestions will appear here for you to approve or reject.
+      <Callout icon="inbox" title={`No ${statusFilter} suggestions`} className="suggestion-empty">
+        {statusFilter === 'pending'
+          ? 'Community corrections and link suggestions will appear here for you to approve or reject.'
+          : `Suggestions you ${statusFilter === 'approved' ? 'approve' : 'reject'} will show up here.`}
       </Callout>
     );
   }
@@ -174,24 +181,39 @@ export default function SuggestionQueue({
             {error?.id === s.id && <p className="admin-delete-error">{error.msg}</p>}
           </div>
 
-          <div className="suggestion-actions">
-            <Button
-              icon="tick"
-              intent="success"
-              text="Approve"
-              loading={busy === s.id}
-              disabled={busy !== null && busy !== s.id}
-              onClick={() => run(onApprove, s)}
-            />
-            <Button
-              icon="cross"
-              intent="danger"
-              variant="minimal"
-              text="Reject"
-              disabled={busy !== null}
-              onClick={() => run(onReject, s)}
-            />
-          </div>
+          {readOnly ? (
+            <div className="suggestion-actions suggestion-resolved">
+              <Tag
+                minimal
+                intent={s.status === 'approved' ? 'success' : 'danger'}
+                icon={s.status === 'approved' ? 'tick' : 'cross'}
+              >
+                {s.status === 'approved' ? 'Approved' : 'Rejected'}
+              </Tag>
+              {s.resolved_at && (
+                <span className="suggestion-meta">{new Date(s.resolved_at).toLocaleString()}</span>
+              )}
+            </div>
+          ) : (
+            <div className="suggestion-actions">
+              <Button
+                icon="tick"
+                intent="success"
+                text="Approve"
+                loading={busy === s.id}
+                disabled={busy !== null && busy !== s.id}
+                onClick={() => run(onApprove, s)}
+              />
+              <Button
+                icon="cross"
+                intent="danger"
+                variant="minimal"
+                text="Reject"
+                disabled={busy !== null}
+                onClick={() => run(onReject, s)}
+              />
+            </div>
+          )}
         </div>
       ))}
     </div>

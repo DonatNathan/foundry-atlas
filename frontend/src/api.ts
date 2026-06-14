@@ -5,6 +5,7 @@ import type {
   GraphPayload,
   Suggestion,
   SuggestionInput,
+  SuggestionStatus,
 } from './types';
 
 // Where the API lives. Empty in dev (the Vite proxy forwards /api to the local
@@ -191,9 +192,12 @@ export async function submitSuggestion(input: SuggestionInput): Promise<Suggesti
   return res.json();
 }
 
-/** Fetch the pending moderation queue. Requires a valid admin token. */
-export async function fetchSuggestions(token: string): Promise<Suggestion[]> {
-  const res = await fetch(url('/api/suggestions?status=pending'), {
+/** Fetch suggestions by status (default: the pending queue). Requires a token. */
+export async function fetchSuggestions(
+  token: string,
+  status: SuggestionStatus = 'pending'
+): Promise<Suggestion[]> {
+  const res = await fetch(url(`/api/suggestions?status=${status}`), {
     headers: { authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(`Failed to load suggestions (${res.status})`);

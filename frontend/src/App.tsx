@@ -316,6 +316,7 @@ export default function App() {
             suggestions={suggestions}
             onApproveSuggestion={handleApproveSuggestion}
             onRejectSuggestion={handleRejectSuggestion}
+            onFetchSuggestions={(status) => fetchSuggestions(requireToken(), status)}
           />
         )}
 
