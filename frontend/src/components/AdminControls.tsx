@@ -50,7 +50,7 @@ export default function AdminControls({ unlocked, onUnlock, onLock }: AdminContr
         onClick={() => (unlocked ? onLock() : setOpen(true))}
       >
         <span className={`bp6-icon bp6-icon-${unlocked ? 'unlock' : 'lock'}`} />
-        {unlocked ? 'Admin' : 'Admin'}
+        <span className="admin-control-label">Admin</span>
       </button>
 
       <Dialog

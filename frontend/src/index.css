@@ -903,6 +903,35 @@ h4 {
   .filter-menu-trigger {
     display: block;
   }
+
+  /* Keep the top bar within the viewport: tighten spacing and collapse the
+     Share / Embed / Admin controls to icon-only so nothing runs off-screen. */
+  .top-bar {
+    gap: 6px;
+    max-width: calc(100vw - 16px);
+  }
+
+  .view-tabs button {
+    padding: 5px 11px;
+  }
+
+  .top-action .bp6-button-text {
+    display: none;
+  }
+
+  /* Drop the icon→text spacing Blueprint keeps on the (now hidden) label so
+     the icon sits centered without a phantom gap on its right. */
+  .top-action .bp6-button > .bp6-icon {
+    margin-right: 0;
+  }
+
+  .admin-control {
+    padding: 7px 11px;
+  }
+
+  .admin-control-label {
+    display: none;
+  }
 }
 
 /* ---------- embed views ---------- */
