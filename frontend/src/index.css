@@ -1195,6 +1195,96 @@ h4 {
   text-align: right;
 }
 
+/* ---------- learning resources (detail panel) ---------- */
+
+.resource-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.resource-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  padding: 7px 9px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: rgba(47, 52, 60, 0.45);
+  color: var(--text);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.resource-link:hover {
+  border-color: var(--accent);
+  background: rgba(76, 144, 240, 0.12);
+}
+
+.resource-link > .bp6-icon:last-child {
+  margin-left: auto;
+  color: var(--text-faint);
+}
+
+.resource-videos {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.resource-video {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.resource-thumb {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  overflow: hidden;
+  color: var(--text-faint);
+}
+
+.resource-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.resource-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.resource-play .bp6-icon {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.7));
+}
+
+.resource-video:hover .resource-thumb {
+  border-color: var(--accent);
+}
+
+.resource-video .resource-title {
+  color: var(--text);
+  line-height: 1.35;
+}
+
 .suggestion-queue {
   display: flex;
   flex-direction: column;

@@ -13,23 +13,31 @@ import EmbedCard from './components/EmbedCard';
 import SuggestDialog from './components/SuggestDialog';
 import { DataProvider } from './DataProvider';
 import { buildShareQuery, parseEmbedMode, parseShareState } from './urlState';
-import { applications, categories as seedCategories, links as seedLinks } from './data';
+import {
+  applications,
+  categories as seedCategories,
+  links as seedLinks,
+  resources as seedResources,
+} from './data';
 import {
   approveSuggestion,
   createApplication,
   createCategory,
   createLink,
+  createResource,
   deleteApplication,
   deleteCategory,
   deleteLink,
+  deleteResource,
   fetchGraph,
   fetchSuggestions,
   rejectSuggestion,
   updateApplication,
   updateCategory,
   updateLink,
+  updateResource,
 } from './api';
-import type { Application, AppLink, Category, Filters, Suggestion } from './types';
+import type { Application, AppLink, AppResource, Category, Filters, Suggestion } from './types';
 
 type View = 'map' | 'table' | 'admin';
 
@@ -50,6 +58,7 @@ export default function App() {
   const [apps, setApps] = useState<Application[]>(applications);
   const [categories, setCategories] = useState<Category[]>(seedCategories);
   const [links, setLinks] = useState<AppLink[]>(seedLinks);
+  const [resources, setResources] = useState<AppResource[]>(seedResources);
   const [adminToken, setAdminToken] = useState<string | null>(
     () => localStorage.getItem(TOKEN_KEY)
   );
@@ -64,6 +73,7 @@ export default function App() {
         setApps(g.applications);
         setCategories(g.categories);
         setLinks(g.links);
+        setResources(g.resources ?? []);
       })
       .catch((e) => console.warn('Falling back to bundled data:', e));
 
@@ -199,6 +209,22 @@ export default function App() {
     setLinks((prev) => prev.filter((x) => x.id !== l.id));
   };
 
+  const handleCreateResource = async (r: AppResource) => {
+    const saved = await createResource(r, requireToken());
+    setResources((prev) => [...prev, saved]);
+  };
+
+  const handleUpdateResource = async (r: AppResource) => {
+    const saved = await updateResource(r, requireToken());
+    setResources((prev) => prev.map((x) => (x.id === saved.id ? saved : x)));
+  };
+
+  const handleDeleteResource = async (r: AppResource) => {
+    if (r.id == null) throw new Error('This resource has no id and cannot be deleted.');
+    await deleteResource(r.id, requireToken());
+    setResources((prev) => prev.filter((x) => x.id !== r.id));
+  };
+
   const handleApproveSuggestion = async (s: Suggestion) => {
     await approveSuggestion(s.id, requireToken());
     setSuggestions((prev) => prev.filter((x) => x.id !== s.id));
@@ -230,7 +256,7 @@ export default function App() {
 
   if (embedMode) {
     return (
-      <DataProvider categories={categories} links={links}>
+      <DataProvider categories={categories} links={links} resources={resources}>
         {embedMode === 'card' ? (
           <EmbedCard app={selectedApp} filters={filters} backHref={backHref} />
         ) : (
@@ -248,7 +274,7 @@ export default function App() {
   }
 
   return (
-    <DataProvider categories={categories} links={links}>
+    <DataProvider categories={categories} links={links} resources={resources}>
       <div className="app bp6-dark">
         <div className="top-bar">
           <div className="view-tabs">
@@ -313,6 +339,9 @@ export default function App() {
             onCreateLink={handleCreateLink}
             onUpdateLink={handleUpdateLink}
             onDeleteLink={handleDeleteLink}
+            onCreateResource={handleCreateResource}
+            onUpdateResource={handleUpdateResource}
+            onDeleteResource={handleDeleteResource}
             suggestions={suggestions}
             onApproveSuggestion={handleApproveSuggestion}
             onRejectSuggestion={handleRejectSuggestion}

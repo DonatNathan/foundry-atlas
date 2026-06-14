@@ -1,6 +1,7 @@
 import type {
   Application,
   AppLink,
+  AppResource,
   Category,
   GraphPayload,
   Suggestion,
@@ -167,6 +168,56 @@ export async function updateLink(link: AppLink, token: string): Promise<AppLink>
 /** Delete a link by id. Requires a valid admin token. */
 export async function deleteLink(id: number, token: string): Promise<void> {
   const res = await fetch(url(`/api/links/${id}`), {
+    method: 'DELETE',
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Delete failed (${res.status})`);
+  }
+}
+
+// ---- learning resources ----------------------------------------------------
+
+const resourceBody = (r: AppResource) => ({
+  app_id: r.app_id,
+  kind: r.kind,
+  title: r.title,
+  url: r.url,
+  sort: r.sort,
+});
+
+async function readResource(res: Response, fallback: string): Promise<AppResource> {
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `${fallback} (${res.status})`);
+  }
+  return res.json();
+}
+
+/** Create a learning resource. Requires a valid admin token. */
+export async function createResource(resource: AppResource, token: string): Promise<AppResource> {
+  const res = await fetch(url('/api/resources'), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify(resourceBody(resource)),
+  });
+  return readResource(res, 'Create failed');
+}
+
+/** Update a learning resource by id. Requires a valid admin token. */
+export async function updateResource(resource: AppResource, token: string): Promise<AppResource> {
+  const res = await fetch(url(`/api/resources/${resource.id}`), {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify(resourceBody(resource)),
+  });
+  return readResource(res, 'Save failed');
+}
+
+/** Delete a learning resource by id. Requires a valid admin token. */
+export async function deleteResource(id: number, token: string): Promise<void> {
+  const res = await fetch(url(`/api/resources/${id}`), {
     method: 'DELETE',
     headers: { authorization: `Bearer ${token}` },
   });
