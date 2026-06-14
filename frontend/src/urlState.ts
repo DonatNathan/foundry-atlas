@@ -51,6 +51,41 @@ export function parseShareState(search: string, allCategoryIds: readonly string[
   };
 }
 
+// ---------- embed mode ----------
+//
+// `?embed=map` renders the live graph with the app chrome stripped away;
+// `?embed=card` renders a single app's card (requires `app=`). Both link back
+// to the full app. The snippet builders below produce the <iframe> users paste.
+
+export type EmbedMode = 'map' | 'card';
+
+/** Read the embed mode from a query string, or null when not embedded. */
+export function parseEmbedMode(search: string): EmbedMode | null {
+  const v = new URLSearchParams(search).get('embed');
+  return v === 'map' || v === 'card' ? v : null;
+}
+
+/** Absolute URL for an iframe `src`: the current state plus `embed=<mode>`. */
+export function buildEmbedSrc(
+  state: ShareState,
+  allCategoryIds: readonly string[],
+  mode: EmbedMode,
+): string {
+  const params = new URLSearchParams(buildShareQuery(state, allCategoryIds));
+  params.set('embed', mode);
+  const { origin, pathname } = window.location;
+  return `${origin}${pathname}?${params.toString()}`;
+}
+
+/** The full `<iframe>` HTML snippet to paste into Notion, a wiki, a blog, … */
+export function buildEmbedSnippet(src: string, width: string, height: string): string {
+  return (
+    `<iframe src="${src}" width="${width}" height="${height}" ` +
+    `style="border:0;border-radius:10px;max-width:100%" ` +
+    `title="Foundry Atlas" loading="lazy" allow="fullscreen"></iframe>`
+  );
+}
+
 /** Build the query string (no leading `?`) that encodes the given state. */
 export function buildShareQuery(state: ShareState, allCategoryIds: readonly string[]): string {
   const p = new URLSearchParams();
