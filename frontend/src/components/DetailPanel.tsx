@@ -1,10 +1,20 @@
+import { useState } from 'react';
 import { AnchorButton, Button, Callout, Divider, Tag } from '@blueprintjs/core';
-import type { Application } from '../types';
-import { appById, RELATIONSHIP_VERBS, STATUS_LABELS, TIER_LABELS } from '../data';
+import type { Application, Filters } from '../types';
+import {
+  appById,
+  describeFilters,
+  matchesFilters,
+  RELATIONSHIP_VERBS,
+  STATUS_LABELS,
+  TIER_LABELS,
+} from '../data';
 import { useData } from '../DataContext';
+import { exportNeighborhoodCard } from '../exportCard';
 
 interface DetailPanelProps {
   app: Application;
+  filters: Filters;
   onSelect: (id: string) => void;
   onClose: () => void;
 }
@@ -15,10 +25,11 @@ interface Connection {
   desc: string | null;
 }
 
-export default function DetailPanel({ app, onSelect, onClose }: DetailPanelProps) {
-  const { categoryById, colorOf, links } = useData();
+export default function DetailPanel({ app, filters, onSelect, onClose }: DetailPanelProps) {
+  const { categories, categoryById, colorOf, links } = useData();
   const category = categoryById.get(app.category_id);
   const color = colorOf(app);
+  const [exporting, setExporting] = useState(false);
 
   const connections: Connection[] = [];
   for (const l of links) {
@@ -44,12 +55,43 @@ export default function DetailPanel({ app, onSelect, onClose }: DetailPanelProps
   const tierIntent =
     app.tier === 'beginner' ? 'success' : app.tier === 'intermediate' ? 'primary' : 'warning';
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await exportNeighborhoodCard({
+        app,
+        color,
+        categoryName: category?.name ?? 'Uncategorized',
+        // Mirror the map: only neighbors that pass the active filters.
+        connections: connections
+          .filter((c) => matchesFilters(c.other, filters))
+          .map((c) => ({
+            app: c.other,
+            color: colorOf(c.other),
+          })),
+        filters: describeFilters(filters, categories),
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <aside className="detail-panel bp6-dark">
       <div className="detail-header" style={{ borderTop: `3px solid ${color}` }}>
         <div className="detail-title-row">
           <h2>{app.name}</h2>
-          <Button variant="minimal" icon="cross" aria-label="Close" onClick={onClose} />
+          <div className="detail-header-actions">
+            <Button
+              variant="minimal"
+              icon="export"
+              aria-label="Export neighborhood as PNG"
+              title="Export this neighborhood as a shareable PNG"
+              loading={exporting}
+              onClick={handleExport}
+            />
+            <Button variant="minimal" icon="cross" aria-label="Close" onClick={onClose} />
+          </div>
         </div>
         <div className="detail-tags">
           {category && (

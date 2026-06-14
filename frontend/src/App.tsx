@@ -7,8 +7,11 @@ import TableView from './components/TableView';
 import AdminView from './components/AdminView';
 import AdminControls from './components/AdminControls';
 import ShareButton from './components/ShareButton';
+import EmbedButton from './components/EmbedButton';
+import EmbedFrame from './components/EmbedFrame';
+import EmbedCard from './components/EmbedCard';
 import { DataProvider } from './DataProvider';
-import { buildShareQuery, parseShareState } from './urlState';
+import { buildShareQuery, parseEmbedMode, parseShareState } from './urlState';
 import { applications, categories as seedCategories, links as seedLinks } from './data';
 import {
   createApplication,
@@ -35,6 +38,8 @@ export default function App() {
     () => parseShareState(window.location.search, seedCategories.map((c) => c.id)),
     []
   );
+  // Embed mode is fixed for the life of the iframe (read once from the URL).
+  const embedMode = useMemo(() => parseEmbedMode(window.location.search), []);
   const [view, setView] = useState<View>(initialState.view);
   const [selectedId, setSelectedId] = useState<string | null>(initialState.selectedId);
   // Seed from the bundled snapshot for instant render, then refresh from the API.
@@ -79,13 +84,15 @@ export default function App() {
   // a permalink (handled by the Share button). Admin is local-only and excluded.
   useEffect(() => {
     if (view === 'admin') return;
-    const qs = buildShareQuery(
-      { view, selectedId, filters },
-      categories.map((c) => c.id)
+    const params = new URLSearchParams(
+      buildShareQuery({ view, selectedId, filters }, categories.map((c) => c.id))
     );
+    // Keep the iframe pointed at its embed view across state changes.
+    if (embedMode) params.set('embed', embedMode);
+    const qs = params.toString();
     const url = `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash}`;
     window.history.replaceState(null, '', url);
-  }, [view, selectedId, filters, categories]);
+  }, [view, selectedId, filters, categories, embedMode]);
 
   const appById = useMemo(() => new Map(apps.map((a) => [a.id, a])), [apps]);
 
@@ -105,6 +112,15 @@ export default function App() {
   const activeView: View = view === 'admin' && !canEdit ? 'map' : view;
 
   const selectedApp = selectedId ? (appById.get(selectedId) ?? null) : null;
+
+  // Link an embed back to the full app (same selection/filters, no embed param).
+  const backHref = useMemo(() => {
+    const qs = buildShareQuery(
+      { view: 'map', selectedId, filters },
+      categories.map((c) => c.id)
+    );
+    return `${window.location.origin}${window.location.pathname}${qs ? `?${qs}` : ''}`;
+  }, [selectedId, filters, categories]);
 
   const requireToken = () => {
     if (!adminToken) throw new Error('Not authorized.');
@@ -171,6 +187,25 @@ export default function App() {
     if (view === 'admin') setView('map');
   };
 
+  if (embedMode) {
+    return (
+      <DataProvider categories={categories} links={links}>
+        {embedMode === 'card' ? (
+          <EmbedCard app={selectedApp} filters={filters} backHref={backHref} />
+        ) : (
+          <EmbedFrame
+            apps={visibleApps}
+            selectedId={selectedId}
+            selectedApp={selectedApp}
+            filters={filters}
+            backHref={backHref}
+            onSelect={setSelectedId}
+          />
+        )}
+      </DataProvider>
+    );
+  }
+
   return (
     <DataProvider categories={categories} links={links}>
       <div className="app bp6-dark">
@@ -195,6 +230,12 @@ export default function App() {
             )}
           </div>
           <ShareButton />
+          <EmbedButton
+            selectedId={selectedId}
+            selectedAppName={selectedApp?.name ?? null}
+            filters={filters}
+            allCategoryIds={categories.map((c) => c.id)}
+          />
           <AdminControls unlocked={canEdit} onUnlock={handleUnlock} onLock={handleLock} />
         </div>
 
@@ -235,6 +276,7 @@ export default function App() {
         {selectedApp && activeView !== 'admin' && (
           <DetailPanel
             app={selectedApp}
+            filters={filters}
             onSelect={setSelectedId}
             onClose={() => setSelectedId(null)}
           />

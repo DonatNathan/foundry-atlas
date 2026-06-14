@@ -1,8 +1,17 @@
 import { useMemo, useState } from 'react';
 import { Button, Checkbox, InputGroup, Switch, Tag } from '@blueprintjs/core';
 import type { Application, Filters, Status, Tier } from '../types';
-import { applications, learningPath, links, STATUS_LABELS, TIER_LABELS } from '../data';
+import {
+  applications,
+  describeFilters,
+  learningPath,
+  links,
+  matchesFilters,
+  STATUS_LABELS,
+  TIER_LABELS,
+} from '../data';
 import { useData } from '../DataContext';
+import { exportLearningPathCard } from '../exportCard';
 
 interface SidebarProps {
   filters: Filters;
@@ -21,6 +30,7 @@ export default function Sidebar({
   visibleCount,
 }: SidebarProps) {
   const { categories, colorOf } = useData();
+  const pathSteps = learningPath.filter((a) => matchesFilters(a, filters));
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState(false);
 
@@ -103,17 +113,34 @@ export default function Sidebar({
             }
           />
           {filters.learningPath && (
-            <ol className="path-list">
-              {learningPath.map((a) => (
-                <li key={a.id}>
-                  <button onClick={() => onSelect(a.id)}>
-                    <span className="path-step">{a.learning_order}</span>
-                    <span className="dot" style={{ background: colorOf(a) }} />
-                    {a.name}
-                  </button>
-                </li>
-              ))}
-            </ol>
+            <>
+              <ol className="path-list">
+                {pathSteps.map((a) => (
+                  <li key={a.id}>
+                    <button onClick={() => onSelect(a.id)}>
+                      <span className="path-step">{a.learning_order}</span>
+                      <span className="dot" style={{ background: colorOf(a) }} />
+                      {a.name}
+                    </button>
+                  </li>
+                ))}
+              </ol>
+              <Button
+                variant="outlined"
+                icon="export"
+                fill
+                className="path-export"
+                disabled={pathSteps.length === 0}
+                onClick={() =>
+                  exportLearningPathCard(
+                    pathSteps.map((a) => ({ app: a, color: colorOf(a) })),
+                    describeFilters(filters, categories),
+                  )
+                }
+              >
+                Export path as PNG
+              </Button>
+            </>
           )}
 
           <Switch

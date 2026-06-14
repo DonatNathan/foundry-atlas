@@ -261,6 +261,17 @@ h4 {
   font-weight: 700;
 }
 
+.detail-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+
+.path-export {
+  margin: 8px 0 4px;
+}
+
 .detail-tags {
   display: flex;
   flex-wrap: wrap;
@@ -892,4 +903,218 @@ h4 {
   .filter-menu-trigger {
     display: block;
   }
+
+  /* Keep the top bar within the viewport: tighten spacing and collapse the
+     Share / Embed / Admin controls to icon-only so nothing runs off-screen. */
+  .top-bar {
+    gap: 6px;
+    max-width: calc(100vw - 16px);
+  }
+
+  .view-tabs button {
+    padding: 5px 11px;
+  }
+
+  .top-action .bp6-button-text {
+    display: none;
+  }
+
+  /* Drop the icon→text spacing Blueprint keeps on the (now hidden) label so
+     the icon sits centered without a phantom gap on its right. */
+  .top-action .bp6-button > .bp6-icon {
+    margin-right: 0;
+  }
+
+  .admin-control {
+    padding: 7px 11px;
+  }
+
+  .admin-control-label {
+    display: none;
+  }
+}
+
+/* ---------- embed views ---------- */
+
+/* Shared hexagon wordmark used in the badge and card footer. */
+.embed-badge-mark {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  background: var(--accent);
+  clip-path: polygon(25% 6%, 75% 6%, 100% 50%, 75% 94%, 25% 94%, 0% 50%);
+}
+
+/* embed=map: full-bleed live graph with a link-back badge. */
+.embed-root {
+  position: absolute;
+  inset: 0;
+}
+
+.embed-badge {
+  position: absolute;
+  z-index: 40;
+  left: 14px;
+  bottom: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.embed-badge:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+/* embed=card: a single centered app card. */
+.embed-card-root {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: var(--bg);
+}
+
+.embed-card-empty {
+  color: var(--text-faint);
+  font-size: 14px;
+}
+
+.embed-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 440px;
+  max-height: 100%;
+  overflow: auto;
+  padding: 16px 18px 14px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.embed-card-head h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.embed-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.embed-card-desc {
+  margin: 12px 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.embed-card-connections {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.embed-card-count {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.embed-card-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.embed-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: rgba(47, 52, 60, 0.5);
+  border-radius: 999px;
+}
+
+.embed-chip-more {
+  color: var(--text-faint);
+}
+
+.embed-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--panel-border);
+  text-decoration: none;
+  color: var(--text);
+}
+
+.embed-card-foot-name {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.embed-card-foot-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* ---------- embed dialog ---------- */
+
+.embed-intro {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.embed-preview {
+  height: 240px;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.embed-preview iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.embed-snippet {
+  font-family: 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.embed-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
 }
