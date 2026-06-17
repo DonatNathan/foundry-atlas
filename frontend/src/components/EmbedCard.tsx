@@ -1,6 +1,6 @@
 import { Icon, Tag } from '@blueprintjs/core';
 import type { Application, Filters } from '../types';
-import { appById, matchesFilters, STATUS_LABELS, TIER_LABELS } from '../data';
+import { matchesFilters, STATUS_LABELS, TIER_LABELS } from '../data';
 import { useData } from '../DataContext';
 
 interface EmbedCardProps {
@@ -13,7 +13,7 @@ interface EmbedCardProps {
 // the live-HTML cousin of the exported PNG. Reflects the active filters and
 // links back to the same app on the full map.
 export default function EmbedCard({ app, filters, backHref }: EmbedCardProps) {
-  const { categoryById, colorOf, links } = useData();
+  const { appById, categoryById, colorOf, links } = useData();
 
   if (!app) {
     return (

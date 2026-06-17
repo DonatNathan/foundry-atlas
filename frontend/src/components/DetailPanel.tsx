@@ -1,14 +1,7 @@
 import { useState } from 'react';
 import { AnchorButton, Button, Callout, Divider, Icon, Tag } from '@blueprintjs/core';
 import type { Application, Filters } from '../types';
-import {
-  appById,
-  describeFilters,
-  matchesFilters,
-  RELATIONSHIP_VERBS,
-  STATUS_LABELS,
-  TIER_LABELS,
-} from '../data';
+import { describeFilters, matchesFilters, RELATIONSHIP_VERBS, STATUS_LABELS, TIER_LABELS } from '../data';
 import { useData } from '../DataContext';
 import { exportNeighborhoodCard } from '../exportCard';
 
@@ -44,7 +37,7 @@ function youtubeId(rawUrl: string): string | null {
 }
 
 export default function DetailPanel({ app, filters, onSelect, onClose, onSuggest }: DetailPanelProps) {
-  const { categories, categoryById, colorOf, links, resourcesOf } = useData();
+  const { appById, categories, categoryById, colorOf, links, resourcesOf } = useData();
   const resources = resourcesOf(app.id);
   const tutorials = resources.filter((r) => r.kind === 'tutorial');
   const videos = resources.filter((r) => r.kind === 'video');
