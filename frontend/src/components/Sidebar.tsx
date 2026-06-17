@@ -1,15 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Button, Checkbox, InputGroup, Switch, Tag } from '@blueprintjs/core';
 import type { Application, Filters, Status, Tier } from '../types';
-import {
-  applications,
-  describeFilters,
-  learningPath,
-  links,
-  matchesFilters,
-  STATUS_LABELS,
-  TIER_LABELS,
-} from '../data';
+import { describeFilters, matchesFilters, STATUS_LABELS, TIER_LABELS } from '../data';
 import { useData } from '../DataContext';
 import { exportLearningPathCard } from '../exportCard';
 
@@ -29,7 +21,7 @@ export default function Sidebar({
   onSelect,
   visibleCount,
 }: SidebarProps) {
-  const { categories, colorOf } = useData();
+  const { apps, categories, colorOf, learningPath, links } = useData();
   const pathSteps = learningPath.filter((a) => matchesFilters(a, filters));
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState(false);
@@ -45,13 +37,13 @@ export default function Sidebar({
         return 2;
       return 3;
     };
-    return applications
+    return apps
       .map((a) => [a, rank(a)] as const)
       .filter(([, r]) => r < 3)
       .sort((x, y) => x[1] - y[1])
       .map(([a]) => a)
       .slice(0, 8);
-  }, [query]);
+  }, [apps, query]);
 
   const toggle = <T,>(set: Set<T>, value: T): Set<T> => {
     const next = new Set(set);
@@ -202,7 +194,7 @@ export default function Sidebar({
           </div>
 
           <p className="stats">
-            {visibleCount} / {applications.length} applications · {links.length} links
+            {visibleCount} / {apps.length} applications · {links.length} links
           </p>
         </div>
       )}
