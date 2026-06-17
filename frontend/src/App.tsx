@@ -256,7 +256,7 @@ export default function App() {
 
   if (embedMode) {
     return (
-      <DataProvider categories={categories} links={links} resources={resources}>
+      <DataProvider apps={apps} categories={categories} links={links} resources={resources}>
         {embedMode === 'card' ? (
           <EmbedCard app={selectedApp} filters={filters} backHref={backHref} />
         ) : (
@@ -274,7 +274,7 @@ export default function App() {
   }
 
   return (
-    <DataProvider categories={categories} links={links} resources={resources}>
+    <DataProvider apps={apps} categories={categories} links={links} resources={resources}>
       <div className="app bp6-dark">
         <div className="top-bar">
           <div className="view-tabs">

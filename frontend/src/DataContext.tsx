@@ -2,6 +2,11 @@ import { createContext, useContext } from 'react';
 import type { Application, AppLink, AppResource, Category } from './types';
 
 export interface DataContextValue {
+  /** Live applications (from the API, falling back to the bundled snapshot). */
+  apps: Application[];
+  appById: Map<string, Application>;
+  /** Apps with a learning_order, in ascending order. */
+  learningPath: Application[];
   categories: Category[];
   categoryById: Map<string, Category>;
   /** Color for an application, derived from its category. */

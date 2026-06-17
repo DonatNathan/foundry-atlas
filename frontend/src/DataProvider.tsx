@@ -5,17 +5,24 @@ import { DataContext, type DataContextValue } from './DataContext';
 const FALLBACK_COLOR = '#8F99A8';
 
 export function DataProvider({
+  apps,
   categories,
   links,
   resources,
   children,
 }: {
+  apps: Application[];
   categories: Category[];
   links: AppLink[];
   resources: AppResource[];
   children: ReactNode;
 }) {
   const value = useMemo<DataContextValue>(() => {
+    const appById = new Map(apps.map((a) => [a.id, a]));
+    const learningPath = apps
+      .filter((a) => a.learning_order != null)
+      .sort((a, b) => (a.learning_order ?? 0) - (b.learning_order ?? 0));
+
     const categoryById = new Map(categories.map((c) => [c.id, c]));
     const colorOfCategory = (id: string) => categoryById.get(id)?.color ?? FALLBACK_COLOR;
 
@@ -37,6 +44,9 @@ export function DataProvider({
     for (const list of resourcesByApp.values()) list.sort((a, b) => a.sort - b.sort);
 
     return {
+      apps,
+      appById,
+      learningPath,
       categories,
       categoryById,
       colorOfCategory,
@@ -47,7 +57,7 @@ export function DataProvider({
       resources,
       resourcesOf: (appId: string) => resourcesByApp.get(appId) ?? [],
     };
-  }, [categories, links, resources]);
+  }, [apps, categories, links, resources]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }
