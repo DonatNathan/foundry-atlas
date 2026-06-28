@@ -145,7 +145,7 @@ export default function Sidebar({
 
           <Switch
             checked={filters.devOnly}
-            label="Available in dev tier only"
+            label="Available in dev tier"
             onChange={(e) =>
               onFiltersChange({ ...filters, devOnly: e.currentTarget.checked })
             }

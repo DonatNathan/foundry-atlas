@@ -83,7 +83,7 @@ export function matchesFilters(app: Application, f: Filters): boolean {
 export function describeFilters(f: Filters, cats: Category[]): string[] {
   const chips: string[] = [];
   if (f.coreOnly) chips.push('Core only');
-  if (f.devOnly) chips.push('Dev tier only');
+  if (f.devOnly) chips.push('Dev tier');
   if (f.categories.size < cats.length) {
     const names = cats.filter((c) => f.categories.has(c.id)).map((c) => c.name);
     chips.push(`Categories: ${names.join(', ')}`);

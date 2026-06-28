@@ -69,7 +69,7 @@ CREATE INDEX idx_resource_app ON app_resource(app_id);
 -- idempotently on startup so existing deployments don't need a destructive reseed.)
 CREATE TABLE suggestion (
   id           SERIAL PRIMARY KEY,
-  kind         TEXT NOT NULL CHECK (kind IN ('new_link', 'correction', 'edit_link')),
+  kind         TEXT NOT NULL CHECK (kind IN ('new_link', 'correction', 'edit_link', 'feature')),
   status       TEXT NOT NULL DEFAULT 'pending'
                  CHECK (status IN ('pending', 'approved', 'rejected')),
 

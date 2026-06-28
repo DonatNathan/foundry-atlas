@@ -75,7 +75,7 @@ export interface Filters {
   learningPath: boolean;
 }
 
-export type SuggestionKind = 'new_link' | 'correction' | 'edit_link';
+export type SuggestionKind = 'new_link' | 'correction' | 'edit_link' | 'feature';
 export type SuggestionStatus = 'pending' | 'approved' | 'rejected';
 
 /** A community-submitted correction, new link, or link edit, awaiting moderation. */

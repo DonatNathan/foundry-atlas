@@ -198,7 +198,7 @@ export default function TableView({ apps, selectedId, onSelect }: TableViewProps
             onChange={(e) => setDevFilter(e.currentTarget.value as 'all' | 'dev')}
           >
             <option value="all">{all('All applications')}</option>
-            <option value="dev">Dev tier only</option>
+            <option value="dev">Dev tier</option>
           </HTMLSelect>
         </label>
       </>

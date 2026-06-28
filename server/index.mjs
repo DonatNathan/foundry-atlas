@@ -476,7 +476,7 @@ const ensureSuggestionTable = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS suggestion (
       id           SERIAL PRIMARY KEY,
-      kind         TEXT NOT NULL CHECK (kind IN ('new_link', 'correction', 'edit_link')),
+      kind         TEXT NOT NULL CHECK (kind IN ('new_link', 'correction', 'edit_link', 'feature')),
       status       TEXT NOT NULL DEFAULT 'pending'
                      CHECK (status IN ('pending', 'approved', 'rejected')),
       app_id       TEXT REFERENCES application(id) ON DELETE CASCADE,
@@ -501,14 +501,14 @@ const ensureSuggestionTable = async () => {
   );
   await query('ALTER TABLE suggestion DROP CONSTRAINT IF EXISTS suggestion_kind_check');
   await query(
-    "ALTER TABLE suggestion ADD CONSTRAINT suggestion_kind_check CHECK (kind IN ('new_link', 'correction', 'edit_link'))"
+    "ALTER TABLE suggestion ADD CONSTRAINT suggestion_kind_check CHECK (kind IN ('new_link', 'correction', 'edit_link', 'feature'))"
   );
 };
 
 // Fields a correction may target — the same set an admin can edit directly.
 const CORRECTABLE = new Set(EDITABLE);
 const NULLABLE_FIELDS = new Set(['learning_order', 'era', 'docs_url', 'tips']);
-const MAX = { value: 4000, comment: 1000, submitter: 120, description: 600 };
+const MAX = { value: 4000, comment: 1000, submitter: 120, description: 600, feature: 2000 };
 
 const trimOrNull = (v) => {
   if (v === undefined || v === null) return null;
@@ -564,14 +564,16 @@ app.post('/api/suggestions', async (req, res, next) => {
   try {
     const b = req.body ?? {};
     const kind = b.kind;
-    if (!['new_link', 'correction', 'edit_link'].includes(kind)) {
-      return res.status(400).json({ error: "kind must be 'new_link', 'edit_link', or 'correction'." });
+    if (!['new_link', 'correction', 'edit_link', 'feature'].includes(kind)) {
+      return res.status(400).json({ error: "Invalid suggestion kind." });
     }
 
     const comment = trimOrNull(b.comment);
     const submitter = trimOrNull(b.submitter);
-    if (comment && comment.length > MAX.comment) {
-      return res.status(400).json({ error: `Comment is too long (max ${MAX.comment}).` });
+    // For a feature idea the comment IS the content, so allow more room.
+    const commentMax = kind === 'feature' ? MAX.feature : MAX.comment;
+    if (comment && comment.length > commentMax) {
+      return res.status(400).json({ error: `Text is too long (max ${commentMax}).` });
     }
     if (submitter && submitter.length > MAX.submitter) {
       return res.status(400).json({ error: `Name is too long (max ${MAX.submitter}).` });
@@ -617,6 +619,15 @@ app.post('/api/suggestions', async (req, res, next) => {
          VALUES ('edit_link', $1, $2, $3, $4, $5)
          RETURNING ${SUGGESTION_COLUMNS}`,
         [linkId, relationship, linkDesc, comment, submitter]
+      );
+      row = result.rows[0];
+    } else if (kind === 'feature') {
+      if (!comment) return res.status(400).json({ error: 'Describe the feature you have in mind.' });
+      const result = await query(
+        `INSERT INTO suggestion (kind, comment, submitter)
+         VALUES ('feature', $1, $2)
+         RETURNING ${SUGGESTION_COLUMNS}`,
+        [comment, submitter]
       );
       row = result.rows[0];
     } else {
@@ -732,7 +743,7 @@ app.post('/api/suggestions/:id/approve', requireAdmin, async (req, res, next) =>
         if (e.code === '23514') return res.status(400).json({ error: 'Invalid relationship.' });
         throw e;
       }
-    } else {
+    } else if (s.kind === 'new_link') {
       if (!s.source_id || !s.target_id) {
         await client.query('ROLLBACK');
         return res.status(409).json({ error: 'A linked application no longer exists.' });
@@ -751,6 +762,7 @@ app.post('/api/suggestions/:id/approve', requireAdmin, async (req, res, next) =>
         throw e;
       }
     }
+    // 'feature' suggestions carry no data change — approving just acknowledges them.
 
     const resolved = await client.query(
       `UPDATE suggestion SET status = 'approved', resolved_at = now() WHERE id = $1
