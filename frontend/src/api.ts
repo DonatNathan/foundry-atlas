@@ -1,6 +1,7 @@
 import type {
   Application,
   AppLink,
+  AppProject,
   AppResource,
   Category,
   GraphPayload,
@@ -219,6 +220,58 @@ export async function updateResource(resource: AppResource, token: string): Prom
 /** Delete a learning resource by id. Requires a valid admin token. */
 export async function deleteResource(id: number, token: string): Promise<void> {
   const res = await fetch(url(`/api/resources/${id}`), {
+    method: 'DELETE',
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Delete failed (${res.status})`);
+  }
+}
+
+// ---- self-learning projects ------------------------------------------------
+
+const projectBody = (p: AppProject) => ({
+  app_id: p.app_id,
+  kind: p.kind,
+  title: p.title,
+  context: p.context,
+  instructions: p.instructions,
+  dataset_url: p.dataset_url,
+  sort: p.sort,
+});
+
+async function readProject(res: Response, fallback: string): Promise<AppProject> {
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `${fallback} (${res.status})`);
+  }
+  return res.json();
+}
+
+/** Create a practice project. Requires a valid admin token. */
+export async function createProject(project: AppProject, token: string): Promise<AppProject> {
+  const res = await fetch(url('/api/projects'), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify(projectBody(project)),
+  });
+  return readProject(res, 'Create failed');
+}
+
+/** Update a practice project by id. Requires a valid admin token. */
+export async function updateProject(project: AppProject, token: string): Promise<AppProject> {
+  const res = await fetch(url(`/api/projects/${project.id}`), {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify(projectBody(project)),
+  });
+  return readProject(res, 'Save failed');
+}
+
+/** Delete a practice project by id. Requires a valid admin token. */
+export async function deleteProject(id: number, token: string): Promise<void> {
+  const res = await fetch(url(`/api/projects/${id}`), {
     method: 'DELETE',
     headers: { authorization: `Bearer ${token}` },
   });

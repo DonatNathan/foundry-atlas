@@ -60,11 +60,19 @@ try {
     );
   }
 
+  for (const p of graph.projects ?? []) {
+    await client.query(
+      `INSERT INTO app_project (app_id, kind, title, context, instructions, dataset_url, sort)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [p.app_id, p.kind, p.title, p.context, p.instructions, p.dataset_url ?? null, p.sort ?? 0]
+    );
+  }
+
   await client.query('COMMIT');
   console.log(
     `Seeded: ${graph.categories.length} categories, ` +
       `${graph.applications.length} applications, ${graph.links.length} links, ` +
-      `${(graph.resources ?? []).length} resources.`
+      `${(graph.resources ?? []).length} resources, ${(graph.projects ?? []).length} projects.`
   );
 } catch (err) {
   await client.query('ROLLBACK');

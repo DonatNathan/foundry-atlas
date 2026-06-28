@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { Application, AppLink, AppResource, Category } from './types';
+import type { Application, AppLink, AppProject, AppResource, Category } from './types';
 
 export interface DataContextValue {
   /** Live applications (from the API, falling back to the bundled snapshot). */
@@ -21,6 +21,9 @@ export interface DataContextValue {
   resources: AppResource[];
   /** Learning resources for an application, in display order. */
   resourcesOf: (appId: string) => AppResource[];
+  projects: AppProject[];
+  /** Self-learning projects for an application, in display order. */
+  projectsOf: (appId: string) => AppProject[];
 }
 
 export const DataContext = createContext<DataContextValue | null>(null);

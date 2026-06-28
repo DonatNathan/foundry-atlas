@@ -76,7 +76,7 @@ const ensureApplicationColumns = async () => {
 
 app.get('/api/graph', async (_req, res, next) => {
   try {
-    const [categories, applications, links, resources] = await Promise.all([
+    const [categories, applications, links, resources, projects] = await Promise.all([
       query('SELECT id, name, color, sort FROM category ORDER BY sort'),
       query(
         `SELECT id, name, category_id, description, use_case, tier, is_core,
@@ -87,12 +87,17 @@ app.get('/api/graph', async (_req, res, next) => {
         'SELECT id, source_id, target_id, relationship, description FROM application_link ORDER BY id'
       ),
       query('SELECT id, app_id, kind, title, url, sort FROM app_resource ORDER BY app_id, sort, id'),
+      query(
+        `SELECT id, app_id, kind, title, context, instructions, dataset_url, sort
+         FROM app_project ORDER BY app_id, sort, id`
+      ),
     ]);
     res.json({
       categories: categories.rows,
       applications: applications.rows.map(rowToApp),
       links: links.rows,
       resources: resources.rows,
+      projects: projects.rows,
     });
   } catch (err) {
     next(err);
@@ -460,6 +465,106 @@ app.delete('/api/resources/:id', requireAdmin, async (req, res, next) => {
   }
 });
 
+// ---- self-learning projects (admin only) -----------------------------------
+
+// Created idempotently on startup so existing deployments pick up the feature
+// without a destructive reseed. Canonical definition lives in schema.sql.
+const ensureProjectTable = async () => {
+  await query(`
+    CREATE TABLE IF NOT EXISTS app_project (
+      id           SERIAL PRIMARY KEY,
+      app_id       TEXT NOT NULL REFERENCES application(id) ON DELETE CASCADE,
+      kind         TEXT NOT NULL,
+      title        TEXT NOT NULL,
+      context      TEXT NOT NULL,
+      instructions TEXT NOT NULL,
+      dataset_url  TEXT,
+      sort         INTEGER NOT NULL DEFAULT 0
+    )
+  `);
+  await query('CREATE INDEX IF NOT EXISTS idx_project_app ON app_project(app_id)');
+};
+
+const PROJECT_COLUMNS = 'id, app_id, kind, title, context, instructions, dataset_url, sort';
+
+const validateProject = (b) => {
+  if (!b.app_id || String(b.app_id).trim() === '') return 'app_id is required.';
+  if (!b.kind || String(b.kind).trim() === '') return 'Kind is required.';
+  if (!b.title || String(b.title).trim() === '') return 'Title is required.';
+  if (!b.context || String(b.context).trim() === '') return 'Context is required.';
+  if (!b.instructions || String(b.instructions).trim() === '') return 'Instructions are required.';
+  if (b.dataset_url && !isHttpUrl(b.dataset_url)) {
+    return 'Dataset URL must start with http:// or https://';
+  }
+  if (b.sort !== undefined && b.sort !== null && !Number.isInteger(b.sort)) {
+    return 'Sort must be an integer.';
+  }
+  return null;
+};
+
+const projectValues = (b) => [
+  b.app_id,
+  b.kind.trim(),
+  b.title.trim(),
+  b.context.trim(),
+  b.instructions.trim(),
+  b.dataset_url ? b.dataset_url.trim() : null,
+  b.sort ?? 0,
+];
+
+app.post('/api/projects', requireAdmin, async (req, res, next) => {
+  try {
+    const b = req.body ?? {};
+    const invalid = validateProject(b);
+    if (invalid) return res.status(400).json({ error: invalid });
+    const result = await query(
+      `INSERT INTO app_project (app_id, kind, title, context, instructions, dataset_url, sort)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING ${PROJECT_COLUMNS}`,
+      projectValues(b)
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    if (err.code === '23503') return res.status(400).json({ error: 'app_id does not exist.' });
+    next(err);
+  }
+});
+
+app.put('/api/projects/:id', requireAdmin, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid project id.' });
+    const b = req.body ?? {};
+    const invalid = validateProject(b);
+    if (invalid) return res.status(400).json({ error: invalid });
+    const result = await query(
+      `UPDATE app_project
+         SET app_id = $2, kind = $3, title = $4, context = $5, instructions = $6,
+             dataset_url = $7, sort = $8
+       WHERE id = $1
+       RETURNING ${PROJECT_COLUMNS}`,
+      [id, ...projectValues(b)]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ error: `Project not found: ${id}` });
+    res.json(result.rows[0]);
+  } catch (err) {
+    if (err.code === '23503') return res.status(400).json({ error: 'app_id does not exist.' });
+    next(err);
+  }
+});
+
+app.delete('/api/projects/:id', requireAdmin, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid project id.' });
+    const del = await query('DELETE FROM app_project WHERE id = $1', [id]);
+    if (del.rowCount === 0) return res.status(404).json({ error: `Project not found: ${id}` });
+    res.json({ id });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ---- suggestions (public create, admin moderation) -------------------------
 //
 // The community is read-only, but they know Foundry. They can submit a proposed
@@ -814,7 +919,12 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Internal server error.' });
 });
 
-Promise.all([ensureApplicationColumns(), ensureSuggestionTable(), ensureResourceTable()])
+Promise.all([
+  ensureApplicationColumns(),
+  ensureSuggestionTable(),
+  ensureResourceTable(),
+  ensureProjectTable(),
+])
   .then(() => app.listen(PORT, () => console.log(`Foundry Atlas API listening on :${PORT}`)))
   .catch((err) => {
     console.error('Failed to ensure feature tables exist:', err);

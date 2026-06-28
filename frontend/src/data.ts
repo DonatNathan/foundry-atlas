@@ -2,6 +2,7 @@ import rawGraph from './data/graph.json';
 import type {
   Application,
   AppLink,
+  AppProject,
   AppResource,
   Category,
   Filters,
@@ -17,6 +18,7 @@ export const categories: Category[] = graph.categories;
 export const applications: Application[] = graph.applications;
 export const links: AppLink[] = graph.links;
 export const resources: AppResource[] = graph.resources ?? [];
+export const projects: AppProject[] = graph.projects ?? [];
 
 export const appById = new Map<string, Application>(applications.map((a) => [a.id, a]));
 export const categoryById = new Map<string, Category>(categories.map((c) => [c.id, c]));

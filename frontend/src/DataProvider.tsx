@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
-import type { Application, AppLink, AppResource, Category } from './types';
+import type { Application, AppLink, AppProject, AppResource, Category } from './types';
 import { DataContext, type DataContextValue } from './DataContext';
 
 const FALLBACK_COLOR = '#8F99A8';
@@ -9,12 +9,14 @@ export function DataProvider({
   categories,
   links,
   resources,
+  projects,
   children,
 }: {
   apps: Application[];
   categories: Category[];
   links: AppLink[];
   resources: AppResource[];
+  projects: AppProject[];
   children: ReactNode;
 }) {
   const value = useMemo<DataContextValue>(() => {
@@ -43,6 +45,13 @@ export function DataProvider({
     }
     for (const list of resourcesByApp.values()) list.sort((a, b) => a.sort - b.sort);
 
+    const projectsByApp = new Map<string, AppProject[]>();
+    for (const p of projects) {
+      if (!projectsByApp.has(p.app_id)) projectsByApp.set(p.app_id, []);
+      projectsByApp.get(p.app_id)!.push(p);
+    }
+    for (const list of projectsByApp.values()) list.sort((a, b) => a.sort - b.sort);
+
     return {
       apps,
       appById,
@@ -56,8 +65,10 @@ export function DataProvider({
       degreeOf: (id: string) => neighbors.get(id)?.size ?? 0,
       resources,
       resourcesOf: (appId: string) => resourcesByApp.get(appId) ?? [],
+      projects,
+      projectsOf: (appId: string) => projectsByApp.get(appId) ?? [],
     };
-  }, [apps, categories, links, resources]);
+  }, [apps, categories, links, resources, projects]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }

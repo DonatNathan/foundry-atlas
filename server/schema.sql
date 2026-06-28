@@ -2,6 +2,7 @@
 -- The deployed source of truth. Seeded from frontend/src/data/graph.json by seed.mjs.
 
 DROP TABLE IF EXISTS suggestion;
+DROP TABLE IF EXISTS app_project;
 DROP TABLE IF EXISTS app_resource;
 DROP TABLE IF EXISTS application_link;
 DROP TABLE IF EXISTS application;
@@ -61,6 +62,22 @@ CREATE TABLE app_resource (
 );
 
 CREATE INDEX idx_resource_app ON app_resource(app_id);
+
+-- Self-learning "practice projects" attached to an application: real-world
+-- training exercises with context, instructions and an optional dataset.
+-- Admin-managed; surfaced in the detail panel's projects overlay.
+CREATE TABLE app_project (
+  id           SERIAL PRIMARY KEY,
+  app_id       TEXT NOT NULL REFERENCES application(id) ON DELETE CASCADE,
+  kind         TEXT NOT NULL,            -- grouping label, e.g. "Pipeline exercise"
+  title        TEXT NOT NULL,
+  context      TEXT NOT NULL,            -- real-life scenario / background
+  instructions TEXT NOT NULL,            -- global step-by-step instructions
+  dataset_url  TEXT,                     -- optional downloadable dataset
+  sort         INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX idx_project_app ON app_project(app_id);
 
 -- Community-submitted corrections / new links, written via a PUBLIC endpoint and
 -- moderated in the Admin tab. Approving a row applies the change; rejecting just

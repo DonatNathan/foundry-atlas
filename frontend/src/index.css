@@ -1284,6 +1284,103 @@ h4 {
   letter-spacing: 0.04em;
 }
 
+/* ---------- self-learning projects ---------- */
+
+.projects-cta {
+  margin-bottom: 6px;
+  margin-top: 14px;
+}
+
+.projects-intro {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.projects-group {
+  margin-bottom: 6px;
+}
+
+.project-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 11px 13px;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  background: rgba(47, 52, 60, 0.45);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.project-card:hover {
+  border-color: var(--accent);
+  background: rgba(76, 144, 240, 0.12);
+}
+
+.project-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.project-card-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.project-card-context {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.project-card-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  color: var(--text-faint);
+}
+
+.project-detail .project-back {
+  margin: -4px 0 8px -6px;
+}
+
+.project-kind-tag {
+  margin-bottom: 4px;
+}
+
+.project-context {
+  margin: 0 0 6px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.project-instructions {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
+.project-dataset {
+  margin-top: 16px;
+}
+
 /* ---------- learning resources (detail panel) ---------- */
 
 .resource-list {
