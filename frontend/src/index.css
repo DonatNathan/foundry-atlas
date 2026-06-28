@@ -374,6 +374,12 @@ h4 {
   gap: 10px;
 }
 
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .view-tabs {
   display: flex;
   gap: 2px;
@@ -910,11 +916,19 @@ h4 {
     display: block;
   }
 
-  /* Keep the top bar within the viewport: tighten spacing and collapse the
-     Share / Embed / Admin controls to icon-only so nothing runs off-screen. */
+  /* Keep the top bar within the viewport: stack the action buttons on their own
+     row below the view tabs, and collapse them to icon-only so nothing runs
+     off-screen. */
   .top-bar {
+    flex-direction: column;
     gap: 6px;
     max-width: calc(100vw - 16px);
+  }
+
+  .top-actions {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
   }
 
   .view-tabs button {
@@ -1199,6 +1213,75 @@ h4 {
 .suggestion-resolved {
   align-items: flex-end;
   text-align: right;
+}
+
+/* ---------- shortest-path finder ---------- */
+
+.pathfinder-swap {
+  display: flex;
+  justify-content: center;
+  margin: -4px 0 4px;
+}
+
+.pathfinder-result {
+  margin-top: 12px;
+}
+
+.pathfinder-summary {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.pathfinder-paths {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.path-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: rgba(47, 52, 60, 0.4);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+}
+
+.path-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  background: #1c2127;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.path-node:hover {
+  border-color: var(--accent);
+  background: rgba(76, 144, 240, 0.12);
+}
+
+.path-arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-faint);
+  font-size: 10px;
+}
+
+.path-verb {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 /* ---------- learning resources (detail panel) ---------- */
