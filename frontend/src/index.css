@@ -291,6 +291,12 @@ h4 {
   overflow-y: auto;
 }
 
+/* Balance the spacing around section dividers: Blueprint only adds a small
+   uniform margin, so add a little breathing room above too. */
+.detail-body .bp6-divider {
+  margin-top: 14px;
+}
+
 .detail-body p {
   margin: 0 0 8px;
   font-size: 13px;
@@ -1136,7 +1142,7 @@ h4 {
 }
 
 .suggest-link {
-  margin-top: 4px;
+  margin-top: 14px;
 }
 
 /* Pending-count badge on the Admin "Suggestions" tab. */
