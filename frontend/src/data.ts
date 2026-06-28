@@ -74,7 +74,8 @@ export function matchesFilters(app: Application, f: Filters): boolean {
     f.categories.has(app.category_id) &&
     f.tiers.has(app.tier) &&
     f.statuses.has(app.status) &&
-    (!f.coreOnly || app.is_core)
+    (!f.coreOnly || app.is_core) &&
+    (!f.devOnly || app.available_in_dev)
   );
 }
 
@@ -82,6 +83,7 @@ export function matchesFilters(app: Application, f: Filters): boolean {
 export function describeFilters(f: Filters, cats: Category[]): string[] {
   const chips: string[] = [];
   if (f.coreOnly) chips.push('Core only');
+  if (f.devOnly) chips.push('Dev tier only');
   if (f.categories.size < cats.length) {
     const names = cats.filter((c) => f.categories.has(c.id)).map((c) => c.name);
     chips.push(`Categories: ${names.join(', ')}`);

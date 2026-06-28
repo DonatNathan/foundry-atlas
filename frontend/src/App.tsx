@@ -136,7 +136,8 @@ export default function App() {
           filters.categories.has(a.category_id) &&
           filters.tiers.has(a.tier) &&
           filters.statuses.has(a.status) &&
-          (!filters.coreOnly || a.is_core)
+          (!filters.coreOnly || a.is_core) &&
+          (!filters.devOnly || a.available_in_dev)
       ),
     [apps, filters]
   );

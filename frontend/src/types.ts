@@ -28,6 +28,8 @@ export interface Application {
   use_case: string;
   tier: Tier;
   is_core: boolean;
+  /** Whether the app is available in the Foundry Developer (dev) tier. */
+  available_in_dev: boolean;
   learning_order: number | null;
   status: Status;
   era: string | null;
@@ -69,6 +71,7 @@ export interface Filters {
   tiers: Set<Tier>;
   statuses: Set<Status>;
   coreOnly: boolean;
+  devOnly: boolean;
   learningPath: boolean;
 }
 

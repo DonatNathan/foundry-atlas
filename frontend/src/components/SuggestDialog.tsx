@@ -36,6 +36,7 @@ const FIELDS: { key: string; label: string; control: Control }[] = [
   { key: 'tier', label: 'Experience level', control: 'tier' },
   { key: 'status', label: 'Generation', control: 'status' },
   { key: 'is_core', label: 'Core application', control: 'bool' },
+  { key: 'available_in_dev', label: 'Available in dev tier', control: 'bool' },
   { key: 'learning_order', label: 'Learning-path step', control: 'text' },
   { key: 'era', label: 'Era', control: 'text' },
   { key: 'docs_url', label: 'Docs URL', control: 'text' },
@@ -207,7 +208,7 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
       case 'bool':
         return (
           <HTMLSelect fill value={value} onChange={(e) => setValue(e.currentTarget.value)}>
-            <option value="true">Yes — core</option>
+            <option value="true">Yes</option>
             <option value="false">No</option>
           </HTMLSelect>
         );

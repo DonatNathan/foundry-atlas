@@ -24,6 +24,7 @@ const FIELD_LABELS: Record<string, string> = {
   tier: 'Experience level',
   status: 'Generation',
   is_core: 'Core application',
+  available_in_dev: 'Available in dev tier',
   learning_order: 'Learning-path step',
   era: 'Era',
   docs_url: 'Docs URL',
@@ -66,6 +67,7 @@ export default function SuggestionQueue({
     if (s.field === 'tier') return v ? (TIER_LABELS[v as keyof typeof TIER_LABELS] ?? v) : '—';
     if (s.field === 'status') return v ? (STATUS_LABELS[v as keyof typeof STATUS_LABELS] ?? v) : '—';
     if (s.field === 'is_core') return v === 'true' ? 'Yes — core' : 'No';
+    if (s.field === 'available_in_dev') return v === 'true' ? 'Yes' : 'No';
     if (v == null || v === '') return '(empty)';
     return v;
   };

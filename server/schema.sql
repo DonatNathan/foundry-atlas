@@ -23,7 +23,8 @@ CREATE TABLE application (
   description    TEXT NOT NULL,
   use_case       TEXT NOT NULL,
   tier           TEXT NOT NULL CHECK (tier IN ('beginner', 'intermediate', 'advanced')),
-  is_core        BOOLEAN NOT NULL DEFAULT FALSE,
+  is_core          BOOLEAN NOT NULL DEFAULT FALSE,
+  available_in_dev BOOLEAN NOT NULL DEFAULT FALSE,  -- usable in the Foundry Developer tier
   learning_order INTEGER,
   status         TEXT NOT NULL CHECK (status IN ('stable', 'new', 'legacy')),
   era            TEXT,

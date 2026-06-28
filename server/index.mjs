@@ -51,12 +51,26 @@ const requireAdmin = (req, res, next) => {
 // Columns an admin is allowed to edit on an application.
 const EDITABLE = [
   'name', 'category_id', 'description', 'use_case', 'tier',
-  'is_core', 'learning_order', 'status', 'era', 'docs_url', 'tips',
+  'is_core', 'available_in_dev', 'learning_order', 'status', 'era', 'docs_url', 'tips',
 ];
+// Boolean columns — coerced from 'true'/'false' strings where needed.
+const BOOLEAN_FIELDS = new Set(['is_core', 'available_in_dev']);
 const TIERS = new Set(['beginner', 'intermediate', 'advanced']);
 const STATUSES = new Set(['stable', 'new', 'legacy']);
 
-const rowToApp = (r) => ({ ...r, is_core: r.is_core === true });
+const rowToApp = (r) => ({
+  ...r,
+  is_core: r.is_core === true,
+  available_in_dev: r.available_in_dev === true,
+});
+
+// Adds columns introduced after the initial schema, idempotently on startup, so
+// existing deployments pick them up without a destructive reseed.
+const ensureApplicationColumns = async () => {
+  await query(
+    'ALTER TABLE application ADD COLUMN IF NOT EXISTS available_in_dev BOOLEAN NOT NULL DEFAULT FALSE'
+  );
+};
 
 // ---- read endpoints (public) ----------------------------------------------
 
@@ -66,7 +80,7 @@ app.get('/api/graph', async (_req, res, next) => {
       query('SELECT id, name, color, sort FROM category ORDER BY sort'),
       query(
         `SELECT id, name, category_id, description, use_case, tier, is_core,
-                learning_order, status, era, docs_url, tips
+                available_in_dev, learning_order, status, era, docs_url, tips
          FROM application ORDER BY category_id, name`
       ),
       query(
@@ -116,7 +130,7 @@ app.put('/api/applications/:id', requireAdmin, async (req, res, next) => {
     const result = await query(
       `UPDATE application SET ${set}, updated_at = now() WHERE id = $1
        RETURNING id, name, category_id, description, use_case, tier, is_core,
-                 learning_order, status, era, docs_url, tips`,
+                 available_in_dev, learning_order, status, era, docs_url, tips`,
       [id, ...values]
     );
 
@@ -152,13 +166,13 @@ app.post('/api/applications', requireAdmin, async (req, res, next) => {
     const result = await query(
       `INSERT INTO application
          (id, name, category_id, description, use_case, tier, is_core,
-          learning_order, status, era, docs_url, tips)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+          available_in_dev, learning_order, status, era, docs_url, tips)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
        RETURNING id, name, category_id, description, use_case, tier, is_core,
-                 learning_order, status, era, docs_url, tips`,
+                 available_in_dev, learning_order, status, era, docs_url, tips`,
       [
         b.id, b.name, b.category_id, b.description, b.use_case, b.tier,
-        b.is_core ?? false, b.learning_order ?? null, b.status,
+        b.is_core ?? false, b.available_in_dev ?? false, b.learning_order ?? null, b.status,
         b.era ?? null, b.docs_url ?? null, b.tips ?? null,
       ]
     );
@@ -513,10 +527,10 @@ const coerceCorrection = (field, raw) => {
     if (!STATUSES.has(raw)) return { error: `Invalid status: ${raw}` };
     return { value: raw };
   }
-  if (field === 'is_core') {
+  if (BOOLEAN_FIELDS.has(field)) {
     if (raw === true || raw === 'true') return { value: true };
     if (raw === false || raw === 'false') return { value: false };
-    return { error: 'is_core must be true or false.' };
+    return { error: `${field} must be true or false.` };
   }
   if (field === 'learning_order') {
     const s = trimOrNull(raw);
@@ -788,7 +802,7 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Internal server error.' });
 });
 
-Promise.all([ensureSuggestionTable(), ensureResourceTable()])
+Promise.all([ensureApplicationColumns(), ensureSuggestionTable(), ensureResourceTable()])
   .then(() => app.listen(PORT, () => console.log(`Foundry Atlas API listening on :${PORT}`)))
   .catch((err) => {
     console.error('Failed to ensure feature tables exist:', err);

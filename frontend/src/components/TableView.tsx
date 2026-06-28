@@ -48,6 +48,7 @@ export default function TableView({ apps, selectedId, onSelect }: TableViewProps
   const [tierFilter, setTierFilter] = useState<Tier | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<Status | 'all'>('all');
   const [coreFilter, setCoreFilter] = useState<'all' | 'core'>('all');
+  const [devFilter, setDevFilter] = useState<'all' | 'dev'>('all');
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const toggleSort = (key: SortKey) => {
@@ -65,6 +66,7 @@ export default function TableView({ apps, selectedId, onSelect }: TableViewProps
       if (tierFilter !== 'all' && a.tier !== tierFilter) return false;
       if (statusFilter !== 'all' && a.status !== statusFilter) return false;
       if (coreFilter === 'core' && !a.is_core) return false;
+      if (devFilter === 'dev' && !a.available_in_dev) return false;
       if (!q) return true;
       return (
         a.name.toLowerCase().includes(q) ||
@@ -95,7 +97,7 @@ export default function TableView({ apps, selectedId, onSelect }: TableViewProps
     const sorted = [...filtered].sort(cmp);
     if (sortDir === 'desc') sorted.reverse();
     return sorted;
-  }, [apps, query, sortKey, sortDir, categoryFilter, tierFilter, statusFilter, coreFilter, categoryById, degreeOf]);
+  }, [apps, query, sortKey, sortDir, categoryFilter, tierFilter, statusFilter, coreFilter, devFilter, categoryById, degreeOf]);
 
   const sortLabel = (key: SortKey, label: string) => (
     <span className="th-inner" onClick={() => toggleSort(key)}>
@@ -114,13 +116,15 @@ export default function TableView({ apps, selectedId, onSelect }: TableViewProps
     (categoryFilter !== 'all' ? 1 : 0) +
     (tierFilter !== 'all' ? 1 : 0) +
     (statusFilter !== 'all' ? 1 : 0) +
-    (coreFilter !== 'all' ? 1 : 0);
+    (coreFilter !== 'all' ? 1 : 0) +
+    (devFilter !== 'all' ? 1 : 0);
 
   const clearFilters = () => {
     setCategoryFilter('all');
     setTierFilter('all');
     setStatusFilter('all');
     setCoreFilter('all');
+    setDevFilter('all');
   };
 
   // The same three filters, rendered either inline (toolbar, desktop) or
@@ -184,6 +188,17 @@ export default function TableView({ apps, selectedId, onSelect }: TableViewProps
           >
             <option value="all">{all('All applications')}</option>
             <option value="core">Core only</option>
+          </HTMLSelect>
+        </label>
+        <label className={labelClass}>
+          <span>Dev tier</span>
+          <HTMLSelect
+            fill={menu}
+            value={devFilter}
+            onChange={(e) => setDevFilter(e.currentTarget.value as 'all' | 'dev')}
+          >
+            <option value="all">{all('All applications')}</option>
+            <option value="dev">Dev tier only</option>
           </HTMLSelect>
         </label>
       </>

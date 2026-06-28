@@ -117,6 +117,11 @@ export default function DetailPanel({ app, filters, onSelect, onClose, onSuggest
             {TIER_LABELS[app.tier]}
           </Tag>
           {app.is_core && <Tag intent="success">Core — learn early</Tag>}
+          {app.available_in_dev && (
+            <Tag minimal intent="success" icon="code">
+              Dev tier
+            </Tag>
+          )}
           {app.status === 'new' && <Tag intent="primary">{STATUS_LABELS.new}</Tag>}
           {app.status === 'legacy' && <Tag intent="danger">{STATUS_LABELS.legacy}</Tag>}
           {app.learning_order != null && (

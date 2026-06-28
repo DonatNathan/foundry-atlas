@@ -33,11 +33,12 @@ try {
     await client.query(
       `INSERT INTO application
          (id, name, category_id, description, use_case, tier, is_core,
-          learning_order, status, era, docs_url, tips)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+          available_in_dev, learning_order, status, era, docs_url, tips)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
       [
         a.id, a.name, a.category_id, a.description, a.use_case, a.tier,
-        a.is_core, a.learning_order, a.status, a.era, a.docs_url, a.tips,
+        a.is_core, a.available_in_dev ?? false, a.learning_order, a.status,
+        a.era, a.docs_url, a.tips,
       ]
     );
   }

@@ -37,6 +37,7 @@ const editableFields = (app: Application) => ({
   use_case: app.use_case,
   tier: app.tier,
   is_core: app.is_core,
+  available_in_dev: app.available_in_dev,
   learning_order: app.learning_order,
   status: app.status,
   era: app.era,

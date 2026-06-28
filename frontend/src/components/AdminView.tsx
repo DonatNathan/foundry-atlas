@@ -115,6 +115,7 @@ export default function AdminView({
     use_case: '',
     tier: 'beginner',
     is_core: false,
+    available_in_dev: false,
     learning_order: null,
     status: 'stable',
     era: null,
