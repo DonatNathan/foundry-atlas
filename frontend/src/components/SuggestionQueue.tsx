@@ -100,6 +100,10 @@ export default function SuggestionQueue({
                 <Tag minimal intent="none" icon="lightbulb">
                   Feature idea
                 </Tag>
+              ) : s.kind === 'resource' ? (
+                <Tag minimal intent="primary" icon={s.field === 'video' ? 'video' : 'learning'}>
+                  {s.field === 'video' ? 'Video' : 'Tutorial'}
+                </Tag>
               ) : (
                 <Tag minimal intent="success" icon="new-link">
                   New link
@@ -164,6 +168,21 @@ export default function SuggestionQueue({
             ) : s.kind === 'feature' ? (
               <div className="suggestion-body">
                 <div className="suggestion-value">{s.comment}</div>
+              </div>
+            ) : s.kind === 'resource' ? (
+              <div className="suggestion-body">
+                <span className="suggestion-target">
+                  <span className="dot" style={{ background: dotColor(s.app_id ?? '') }} />
+                  {nameOf(s.app_id ?? '')}
+                </span>
+                <div className="suggestion-change">
+                  <strong>{s.value}</strong>
+                  <div className="suggestion-value">
+                    <a href={s.url ?? undefined} target="_blank" rel="noreferrer">
+                      {s.url}
+                    </a>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="suggestion-body">

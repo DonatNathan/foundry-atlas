@@ -10,7 +10,13 @@ import {
   InputGroup,
   TextArea,
 } from '@blueprintjs/core';
-import type { Application, Relationship, SuggestionInput, SuggestionKind } from '../types';
+import type {
+  Application,
+  Relationship,
+  ResourceKind,
+  SuggestionInput,
+  SuggestionKind,
+} from '../types';
 import { RELATIONSHIP_VERBS, STATUS_LABELS, TIER_LABELS } from '../data';
 import { useData } from '../DataContext';
 import { submitSuggestion } from '../api';
@@ -79,6 +85,10 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
   const [editLinkId, setEditLinkId] = useState<number | null>(null);
   const [editRelationship, setEditRelationship] = useState<Relationship>('feeds');
   const [editDescription, setEditDescription] = useState('');
+  // Resource state (tutorial / video).
+  const [resourceKind, setResourceKind] = useState<ResourceKind>('tutorial');
+  const [resourceTitle, setResourceTitle] = useState('');
+  const [resourceUrl, setResourceUrl] = useState('');
   // Common.
   const [comment, setComment] = useState('');
   const [submitter, setSubmitter] = useState('');
@@ -107,6 +117,9 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
     setEditLinkId(startLink?.id ?? null);
     setEditRelationship(startLink?.relationship ?? 'feeds');
     setEditDescription(startLink?.description ?? '');
+    setResourceKind('tutorial');
+    setResourceTitle('');
+    setResourceUrl('');
     setComment('');
     setSubmitter('');
     setError(null);
@@ -158,6 +171,21 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
     } else if (kind === 'feature') {
       if (!comment.trim()) return setError('Describe the feature you have in mind.');
       input = { kind, comment, submitter };
+    } else if (kind === 'resource') {
+      if (!appId) return setError('Pick the application this is about.');
+      if (!resourceTitle.trim()) return setError('Add a title.');
+      if (!/^https?:\/\/\S+$/i.test(resourceUrl.trim())) {
+        return setError('Add a valid URL (starting with http:// or https://).');
+      }
+      input = {
+        kind,
+        app_id: appId,
+        resource_kind: resourceKind,
+        title: resourceTitle,
+        url: resourceUrl,
+        comment,
+        submitter,
+      };
     } else {
       if (!sourceId || !targetId) return setError('Pick both applications for the link.');
       if (sourceId === targetId) return setError('A link must connect two different applications.');
@@ -275,6 +303,7 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
                 <option value="edit_link" disabled={linkOptions.length === 0}>
                   Edit a link
                 </option>
+                <option value="resource">Suggest a tutorial or video</option>
                 <option value="feature">Suggest a feature</option>
               </HTMLSelect>
             </FormGroup>
@@ -339,6 +368,48 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
                     value={editDescription}
                     onChange={(e) => setEditDescription(e.target.value)}
                     placeholder="e.g. Streams events into the pipeline"
+                  />
+                </FormGroup>
+              </>
+            ) : kind === 'resource' ? (
+              <>
+                <div className="edit-row">
+                  <FormGroup label="Application" className="edit-col">
+                    <HTMLSelect fill value={appId} onChange={(e) => setAppId(e.currentTarget.value)}>
+                      {sortedApps.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name}
+                        </option>
+                      ))}
+                    </HTMLSelect>
+                  </FormGroup>
+                  <FormGroup label="Type" className="edit-col">
+                    <HTMLSelect
+                      fill
+                      value={resourceKind}
+                      onChange={(e) => setResourceKind(e.currentTarget.value as ResourceKind)}
+                    >
+                      <option value="tutorial">Foundry tutorial</option>
+                      <option value="video">YouTube video</option>
+                    </HTMLSelect>
+                  </FormGroup>
+                </div>
+                <FormGroup label="Title">
+                  <InputGroup
+                    value={resourceTitle}
+                    onChange={(e) => setResourceTitle(e.target.value)}
+                    placeholder={
+                      resourceKind === 'video'
+                        ? 'e.g. Pipeline Builder in 10 minutes'
+                        : 'e.g. Build your first pipeline'
+                    }
+                  />
+                </FormGroup>
+                <FormGroup label="URL">
+                  <InputGroup
+                    value={resourceUrl}
+                    onChange={(e) => setResourceUrl(e.target.value)}
+                    placeholder="https://…"
                   />
                 </FormGroup>
               </>
