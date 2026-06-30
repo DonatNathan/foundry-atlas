@@ -63,7 +63,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_SSH_PORT }}
           script: |
-            set -euo pipefail
+            set -eu
             cd "${{ secrets.VPS_PROJECT_PATH }}"
             git fetch --all
             git reset --hard origin/main
