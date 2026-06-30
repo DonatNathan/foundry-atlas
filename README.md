@@ -1,4 +1,4 @@
-# Foundry Atlas — an interactive map of Palantir Foundry
+# Foundry Atlas — Interactive map of Palantir Foundry
 
 An Obsidian-style, force-directed map of the Palantir Foundry platform: every major
 application as a node, every meaningful relationship between them as a typed link.
