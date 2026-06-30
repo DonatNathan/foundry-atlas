@@ -50,16 +50,18 @@ export default function ProjectsDialog({ isOpen, appName, projects, onClose }: P
           </Callout>
         ) : selected ? (
           <div className="project-detail">
-            <Button
-              variant="minimal"
-              icon="chevron-left"
-              text="All projects"
-              className="project-back"
-              onClick={() => setSelectedId(null)}
-            />
-            <Tag minimal intent="primary" className="project-kind-tag">
-              {selected.kind}
-            </Tag>
+            <div className="project-detail-head">
+              <Button
+                variant="minimal"
+                icon="chevron-left"
+                text="All projects"
+                className="project-back"
+                onClick={() => setSelectedId(null)}
+              />
+              <Tag minimal intent="primary" className="project-kind-tag">
+                {selected.kind}
+              </Tag>
+            </div>
 
             <h4>The scenario</h4>
             <p className="project-context">{selected.context}</p>

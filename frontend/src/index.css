@@ -1354,12 +1354,21 @@ h4 {
   color: var(--text-faint);
 }
 
-.project-detail .project-back {
-  margin: -4px 0 8px -6px;
+.project-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.project-detail-head .project-back {
+  margin: 0 0 0 -6px;
 }
 
 .project-kind-tag {
-  margin-bottom: 4px;
+  margin: 0;
+  flex: none;
 }
 
 .project-context {
