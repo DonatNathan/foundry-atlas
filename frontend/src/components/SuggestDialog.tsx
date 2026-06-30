@@ -36,6 +36,7 @@ const FIELDS: { key: string; label: string; control: Control }[] = [
   { key: 'tier', label: 'Experience level', control: 'tier' },
   { key: 'status', label: 'Generation', control: 'status' },
   { key: 'is_core', label: 'Core application', control: 'bool' },
+  { key: 'available_in_dev', label: 'Available in dev tier', control: 'bool' },
   { key: 'learning_order', label: 'Learning-path step', control: 'text' },
   { key: 'era', label: 'Era', control: 'text' },
   { key: 'docs_url', label: 'Docs URL', control: 'text' },
@@ -154,6 +155,9 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
         comment,
         submitter,
       };
+    } else if (kind === 'feature') {
+      if (!comment.trim()) return setError('Describe the feature you have in mind.');
+      input = { kind, comment, submitter };
     } else {
       if (!sourceId || !targetId) return setError('Pick both applications for the link.');
       if (sourceId === targetId) return setError('A link must connect two different applications.');
@@ -207,7 +211,7 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
       case 'bool':
         return (
           <HTMLSelect fill value={value} onChange={(e) => setValue(e.currentTarget.value)}>
-            <option value="true">Yes — core</option>
+            <option value="true">Yes</option>
             <option value="false">No</option>
           </HTMLSelect>
         );
@@ -255,8 +259,8 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
         <>
           <DialogBody>
             <p className="suggest-intro">
-              Spotted something off, or know a connection that’s missing? Propose a change below —
-              it goes into a moderation queue, not straight onto the map.
+              Spotted something off, know a connection that’s missing, or have an idea for the
+              project? Tell us below — it goes into a moderation queue, not straight onto the map.
             </p>
 
             <FormGroup label="What would you like to suggest?">
@@ -268,6 +272,7 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
                 <Radio label="Correct a detail" value="correction" />
                 <Radio label="Add a missing link" value="new_link" />
                 <Radio label="Edit a link" value="edit_link" disabled={linkOptions.length === 0} />
+                <Radio label="Suggest a feature" value="feature" />
               </RadioGroup>
             </FormGroup>
 
@@ -334,7 +339,7 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
                   />
                 </FormGroup>
               </>
-            ) : (
+            ) : kind === 'new_link' ? (
               <>
                 <div className="edit-row">
                   <FormGroup label="From" className="edit-col">
@@ -379,17 +384,30 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
                   />
                 </FormGroup>
               </>
-            )}
+            ) : null}
 
-            <FormGroup label="Why / source" labelInfo="(optional)">
-              <TextArea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                fill
-                rows={2}
-                placeholder="Add context or a link to docs so a maintainer can verify it."
-              />
-            </FormGroup>
+            {kind === 'feature' ? (
+              <FormGroup label="Your idea" labelInfo="(required)">
+                <TextArea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  fill
+                  rows={5}
+                  autoResize
+                  placeholder="Describe the feature you’d like to see in Foundry Atlas…"
+                />
+              </FormGroup>
+            ) : (
+              <FormGroup label="Why / source" labelInfo="(optional)">
+                <TextArea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  fill
+                  rows={2}
+                  placeholder="Add context or a link to docs so a maintainer can verify it."
+                />
+              </FormGroup>
+            )}
 
             <FormGroup label="Your name or handle" labelInfo="(optional)">
               <InputGroup

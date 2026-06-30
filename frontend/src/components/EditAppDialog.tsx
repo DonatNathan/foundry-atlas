@@ -149,6 +149,13 @@ export default function EditAppDialog({
               onChange={(e) => set('is_core', e.currentTarget.checked)}
             />
           </FormGroup>
+          <FormGroup label="Developer tier" className="edit-col">
+            <Checkbox
+              checked={draft.available_in_dev}
+              label="Available in dev tier"
+              onChange={(e) => set('available_in_dev', e.currentTarget.checked)}
+            />
+          </FormGroup>
           <FormGroup label="Learning order" className="edit-col" helperText="Empty = not on path">
             <NumericInput
               fill

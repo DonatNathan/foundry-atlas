@@ -291,6 +291,12 @@ h4 {
   overflow-y: auto;
 }
 
+/* Balance the spacing around section dividers: Blueprint only adds a small
+   uniform margin, so add a little breathing room above too. */
+.detail-body .bp6-divider {
+  margin-top: 14px;
+}
+
 .detail-body p {
   margin: 0 0 8px;
   font-size: 13px;
@@ -363,6 +369,12 @@ h4 {
   left: 50%;
   transform: translateX(-50%);
   z-index: 41;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.top-actions {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -904,11 +916,19 @@ h4 {
     display: block;
   }
 
-  /* Keep the top bar within the viewport: tighten spacing and collapse the
-     Share / Embed / Admin controls to icon-only so nothing runs off-screen. */
+  /* Keep the top bar within the viewport: stack the action buttons on their own
+     row below the view tabs, and collapse them to icon-only so nothing runs
+     off-screen. */
   .top-bar {
+    flex-direction: column;
     gap: 6px;
     max-width: calc(100vw - 16px);
+  }
+
+  .top-actions {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
   }
 
   .view-tabs button {
@@ -1136,7 +1156,7 @@ h4 {
 }
 
 .suggest-link {
-  margin-top: 4px;
+  margin-top: 14px;
 }
 
 /* Pending-count badge on the Admin "Suggestions" tab. */
@@ -1193,6 +1213,172 @@ h4 {
 .suggestion-resolved {
   align-items: flex-end;
   text-align: right;
+}
+
+/* ---------- shortest-path finder ---------- */
+
+.pathfinder-swap {
+  display: flex;
+  justify-content: center;
+  margin: -4px 0 4px;
+}
+
+.pathfinder-result {
+  margin-top: 12px;
+}
+
+.pathfinder-summary {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.pathfinder-paths {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.path-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: rgba(47, 52, 60, 0.4);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+}
+
+.path-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  background: #1c2127;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.path-node:hover {
+  border-color: var(--accent);
+  background: rgba(76, 144, 240, 0.12);
+}
+
+.path-arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-faint);
+  font-size: 10px;
+}
+
+.path-verb {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- self-learning projects ---------- */
+
+.projects-cta {
+  margin-bottom: 6px;
+  margin-top: 14px;
+}
+
+.projects-intro {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.projects-group {
+  margin-bottom: 6px;
+}
+
+.project-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 11px 13px;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  background: rgba(47, 52, 60, 0.45);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.project-card:hover {
+  border-color: var(--accent);
+  background: rgba(76, 144, 240, 0.12);
+}
+
+.project-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.project-card-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.project-card-context {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.project-card-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  color: var(--text-faint);
+}
+
+.project-detail .project-back {
+  margin: -4px 0 8px -6px;
+}
+
+.project-kind-tag {
+  margin-bottom: 4px;
+}
+
+.project-context {
+  margin: 0 0 6px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.project-instructions {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
+.project-dataset {
+  margin-top: 16px;
 }
 
 /* ---------- learning resources (detail panel) ---------- */

@@ -143,6 +143,14 @@ export default function Sidebar({
             }
           />
 
+          <Switch
+            checked={filters.devOnly}
+            label="Available in dev tier"
+            onChange={(e) =>
+              onFiltersChange({ ...filters, devOnly: e.currentTarget.checked })
+            }
+          />
+
           <h4>Categories</h4>
           {categories.map((c) => (
             <Checkbox

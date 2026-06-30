@@ -2,6 +2,7 @@ import rawGraph from './data/graph.json';
 import type {
   Application,
   AppLink,
+  AppProject,
   AppResource,
   Category,
   Filters,
@@ -17,6 +18,7 @@ export const categories: Category[] = graph.categories;
 export const applications: Application[] = graph.applications;
 export const links: AppLink[] = graph.links;
 export const resources: AppResource[] = graph.resources ?? [];
+export const projects: AppProject[] = graph.projects ?? [];
 
 export const appById = new Map<string, Application>(applications.map((a) => [a.id, a]));
 export const categoryById = new Map<string, Category>(categories.map((c) => [c.id, c]));
@@ -74,7 +76,8 @@ export function matchesFilters(app: Application, f: Filters): boolean {
     f.categories.has(app.category_id) &&
     f.tiers.has(app.tier) &&
     f.statuses.has(app.status) &&
-    (!f.coreOnly || app.is_core)
+    (!f.coreOnly || app.is_core) &&
+    (!f.devOnly || app.available_in_dev)
   );
 }
 
@@ -82,6 +85,7 @@ export function matchesFilters(app: Application, f: Filters): boolean {
 export function describeFilters(f: Filters, cats: Category[]): string[] {
   const chips: string[] = [];
   if (f.coreOnly) chips.push('Core only');
+  if (f.devOnly) chips.push('Dev tier');
   if (f.categories.size < cats.length) {
     const names = cats.filter((c) => f.categories.has(c.id)).map((c) => c.name);
     chips.push(`Categories: ${names.join(', ')}`);

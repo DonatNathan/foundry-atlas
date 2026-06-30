@@ -11,6 +11,7 @@ import EmbedButton from './components/EmbedButton';
 import EmbedFrame from './components/EmbedFrame';
 import EmbedCard from './components/EmbedCard';
 import SuggestDialog from './components/SuggestDialog';
+import PathFinderDialog from './components/PathFinderDialog';
 import { DataProvider } from './DataProvider';
 import { buildShareQuery, parseEmbedMode, parseShareState } from './urlState';
 import {
@@ -18,16 +19,19 @@ import {
   categories as seedCategories,
   links as seedLinks,
   resources as seedResources,
+  projects as seedProjects,
 } from './data';
 import {
   approveSuggestion,
   createApplication,
   createCategory,
   createLink,
+  createProject,
   createResource,
   deleteApplication,
   deleteCategory,
   deleteLink,
+  deleteProject,
   deleteResource,
   fetchGraph,
   fetchSuggestions,
@@ -35,9 +39,18 @@ import {
   updateApplication,
   updateCategory,
   updateLink,
+  updateProject,
   updateResource,
 } from './api';
-import type { Application, AppLink, AppResource, Category, Filters, Suggestion } from './types';
+import type {
+  Application,
+  AppLink,
+  AppProject,
+  AppResource,
+  Category,
+  Filters,
+  Suggestion,
+} from './types';
 
 type View = 'map' | 'table' | 'admin';
 
@@ -59,6 +72,7 @@ export default function App() {
   const [categories, setCategories] = useState<Category[]>(seedCategories);
   const [links, setLinks] = useState<AppLink[]>(seedLinks);
   const [resources, setResources] = useState<AppResource[]>(seedResources);
+  const [projects, setProjects] = useState<AppProject[]>(seedProjects);
   const [adminToken, setAdminToken] = useState<string | null>(
     () => localStorage.getItem(TOKEN_KEY)
   );
@@ -66,6 +80,7 @@ export default function App() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [suggestApp, setSuggestApp] = useState<Application | null>(null);
+  const [pathOpen, setPathOpen] = useState(false);
 
   const refreshGraph = () =>
     fetchGraph()
@@ -74,6 +89,7 @@ export default function App() {
         setCategories(g.categories);
         setLinks(g.links);
         setResources(g.resources ?? []);
+        setProjects(g.projects ?? []);
       })
       .catch((e) => console.warn('Falling back to bundled data:', e));
 
@@ -136,7 +152,8 @@ export default function App() {
           filters.categories.has(a.category_id) &&
           filters.tiers.has(a.tier) &&
           filters.statuses.has(a.status) &&
-          (!filters.coreOnly || a.is_core)
+          (!filters.coreOnly || a.is_core) &&
+          (!filters.devOnly || a.available_in_dev)
       ),
     [apps, filters]
   );
@@ -225,6 +242,22 @@ export default function App() {
     setResources((prev) => prev.filter((x) => x.id !== r.id));
   };
 
+  const handleCreateProject = async (p: AppProject) => {
+    const saved = await createProject(p, requireToken());
+    setProjects((prev) => [...prev, saved]);
+  };
+
+  const handleUpdateProject = async (p: AppProject) => {
+    const saved = await updateProject(p, requireToken());
+    setProjects((prev) => prev.map((x) => (x.id === saved.id ? saved : x)));
+  };
+
+  const handleDeleteProject = async (p: AppProject) => {
+    if (p.id == null) throw new Error('This project has no id and cannot be deleted.');
+    await deleteProject(p.id, requireToken());
+    setProjects((prev) => prev.filter((x) => x.id !== p.id));
+  };
+
   const handleApproveSuggestion = async (s: Suggestion) => {
     await approveSuggestion(s.id, requireToken());
     setSuggestions((prev) => prev.filter((x) => x.id !== s.id));
@@ -256,7 +289,13 @@ export default function App() {
 
   if (embedMode) {
     return (
-      <DataProvider apps={apps} categories={categories} links={links} resources={resources}>
+      <DataProvider
+      apps={apps}
+      categories={categories}
+      links={links}
+      resources={resources}
+      projects={projects}
+    >
         {embedMode === 'card' ? (
           <EmbedCard app={selectedApp} filters={filters} backHref={backHref} />
         ) : (
@@ -274,7 +313,13 @@ export default function App() {
   }
 
   return (
-    <DataProvider apps={apps} categories={categories} links={links} resources={resources}>
+    <DataProvider
+      apps={apps}
+      categories={categories}
+      links={links}
+      resources={resources}
+      projects={projects}
+    >
       <div className="app bp6-dark">
         <div className="top-bar">
           <div className="view-tabs">
@@ -296,24 +341,36 @@ export default function App() {
               </button>
             )}
           </div>
-          <div className="top-action">
-            <Tooltip content="Suggest a correction or new link" placement="bottom">
-              <Button
-                variant="minimal"
-                icon="lightbulb"
-                text="Suggest"
-                onClick={() => openSuggest(selectedApp)}
-              />
-            </Tooltip>
+          <div className="top-actions">
+            <div className="top-action">
+              <Tooltip content="Find the shortest path between two apps" placement="bottom">
+                <Button
+                  variant="minimal"
+                  icon="flows"
+                  text="Path"
+                  onClick={() => setPathOpen(true)}
+                />
+              </Tooltip>
+            </div>
+            <div className="top-action">
+              <Tooltip content="Suggest a correction or new link" placement="bottom">
+                <Button
+                  variant="minimal"
+                  icon="lightbulb"
+                  text="Suggest"
+                  onClick={() => openSuggest(selectedApp)}
+                />
+              </Tooltip>
+            </div>
+            <ShareButton />
+            <EmbedButton
+              selectedId={selectedId}
+              selectedAppName={selectedApp?.name ?? null}
+              filters={filters}
+              allCategoryIds={categories.map((c) => c.id)}
+            />
+            <AdminControls unlocked={canEdit} onUnlock={handleUnlock} onLock={handleLock} />
           </div>
-          <ShareButton />
-          <EmbedButton
-            selectedId={selectedId}
-            selectedAppName={selectedApp?.name ?? null}
-            filters={filters}
-            allCategoryIds={categories.map((c) => c.id)}
-          />
-          <AdminControls unlocked={canEdit} onUnlock={handleUnlock} onLock={handleLock} />
         </div>
 
         {activeView === 'map' && (
@@ -342,6 +399,9 @@ export default function App() {
             onCreateResource={handleCreateResource}
             onUpdateResource={handleUpdateResource}
             onDeleteResource={handleDeleteResource}
+            onCreateProject={handleCreateProject}
+            onUpdateProject={handleUpdateProject}
+            onDeleteProject={handleDeleteProject}
             suggestions={suggestions}
             onApproveSuggestion={handleApproveSuggestion}
             onRejectSuggestion={handleRejectSuggestion}
@@ -372,6 +432,17 @@ export default function App() {
           apps={apps}
           initialApp={suggestApp}
           onClose={() => setSuggestOpen(false)}
+        />
+
+        <PathFinderDialog
+          isOpen={pathOpen}
+          initialFrom={selectedId}
+          onClose={() => setPathOpen(false)}
+          onSelect={(id) => {
+            setSelectedId(id);
+            setView('map');
+            setPathOpen(false);
+          }}
         />
       </div>
     </DataProvider>
