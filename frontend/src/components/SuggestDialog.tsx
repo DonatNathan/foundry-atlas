@@ -8,8 +8,6 @@ import {
   FormGroup,
   HTMLSelect,
   InputGroup,
-  Radio,
-  RadioGroup,
   TextArea,
 } from '@blueprintjs/core';
 import type { Application, Relationship, SuggestionInput, SuggestionKind } from '../types';
@@ -66,7 +64,8 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
     ? editableLinks.filter((l) => l.source_id === initialApp.id || l.target_id === initialApp.id)
     : editableLinks;
 
-  const [kind, setKind] = useState<SuggestionKind>('correction');
+  // Empty until the user picks a type from the dropdown.
+  const [kind, setKind] = useState<SuggestionKind | ''>('');
   // Correction state.
   const [appId, setAppId] = useState('');
   const [field, setField] = useState('description');
@@ -97,7 +96,7 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
     // Default the edit-link picker to the first offered link (already scoped to
     // the opened app, if any).
     const startLink = linkOptions[0] ?? null;
-    setKind('correction');
+    setKind('');
     setAppId(start?.id ?? '');
     setField('description');
     setValue(start ? fieldValue(start, 'description') : '');
@@ -141,6 +140,7 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
 
   const submit = async () => {
     setError(null);
+    if (!kind) return setError('Choose a suggestion type.');
     let input: SuggestionInput;
     if (kind === 'correction') {
       if (!appId) return setError('Pick the application to correct.');
@@ -264,19 +264,22 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
             </p>
 
             <FormGroup label="What would you like to suggest?">
-              <RadioGroup
-                inline
-                selectedValue={kind}
-                onChange={(e) => setKind(e.currentTarget.value as SuggestionKind)}
+              <HTMLSelect
+                fill
+                value={kind}
+                onChange={(e) => setKind(e.currentTarget.value as SuggestionKind | '')}
               >
-                <Radio label="Correct a detail" value="correction" />
-                <Radio label="Add a missing link" value="new_link" />
-                <Radio label="Edit a link" value="edit_link" disabled={linkOptions.length === 0} />
-                <Radio label="Suggest a feature" value="feature" />
-              </RadioGroup>
+                <option value="">Select a type…</option>
+                <option value="correction">Correct a detail</option>
+                <option value="new_link">Add a missing link</option>
+                <option value="edit_link" disabled={linkOptions.length === 0}>
+                  Edit a link
+                </option>
+                <option value="feature">Suggest a feature</option>
+              </HTMLSelect>
             </FormGroup>
 
-            {kind === 'correction' ? (
+            {kind === '' ? null : kind === 'correction' ? (
               <>
                 <div className="edit-row">
                   <FormGroup label="Application" className="edit-col">
@@ -397,7 +400,7 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
                   placeholder="Describe the feature you’d like to see in Foundry Atlas…"
                 />
               </FormGroup>
-            ) : (
+            ) : kind === '' ? null : (
               <FormGroup label="Why / source" labelInfo="(optional)">
                 <TextArea
                   value={comment}
@@ -409,13 +412,15 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
               </FormGroup>
             )}
 
-            <FormGroup label="Your name or handle" labelInfo="(optional)">
-              <InputGroup
-                value={submitter}
-                onChange={(e) => setSubmitter(e.target.value)}
-                placeholder="So we can credit you"
-              />
-            </FormGroup>
+            {kind !== '' && (
+              <FormGroup label="Your name or handle" labelInfo="(optional)">
+                <InputGroup
+                  value={submitter}
+                  onChange={(e) => setSubmitter(e.target.value)}
+                  placeholder="So we can credit you"
+                />
+              </FormGroup>
+            )}
 
             {error && (
               <Callout intent="danger" compact>
@@ -427,7 +432,13 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
             actions={
               <>
                 <Button text="Cancel" onClick={onClose} disabled={submitting} />
-                <Button text="Submit suggestion" intent="primary" loading={submitting} onClick={submit} />
+                <Button
+                  text="Submit suggestion"
+                  intent="primary"
+                  loading={submitting}
+                  disabled={!kind}
+                  onClick={submit}
+                />
               </>
             }
           />
