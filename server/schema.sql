@@ -86,15 +86,17 @@ CREATE INDEX idx_project_app ON app_project(app_id);
 -- idempotently on startup so existing deployments don't need a destructive reseed.)
 CREATE TABLE suggestion (
   id           SERIAL PRIMARY KEY,
-  kind         TEXT NOT NULL CHECK (kind IN ('new_link', 'correction', 'edit_link', 'feature')),
+  kind         TEXT NOT NULL
+                 CHECK (kind IN ('new_link', 'correction', 'edit_link', 'feature', 'resource')),
   status       TEXT NOT NULL DEFAULT 'pending'
                  CHECK (status IN ('pending', 'approved', 'rejected')),
 
-  -- Correction payload (NULL for new_link): propose a new value for one column
-  -- of one application.
+  -- Correction payload: propose a new value for one column of one application.
+  -- Reused by 'resource' suggestions: field = resource kind, value = title.
   app_id       TEXT REFERENCES application(id) ON DELETE CASCADE,
   field        TEXT,
   value        TEXT,
+  url          TEXT,                    -- resource URL (for 'resource' suggestions)
 
   -- Link payload. For new_link: source_id/target_id/relationship/link_description.
   -- For edit_link: link_id plus the proposed relationship/link_description.

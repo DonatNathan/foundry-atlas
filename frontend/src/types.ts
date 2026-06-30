@@ -89,7 +89,7 @@ export interface Filters {
   learningPath: boolean;
 }
 
-export type SuggestionKind = 'new_link' | 'correction' | 'edit_link' | 'feature';
+export type SuggestionKind = 'new_link' | 'correction' | 'edit_link' | 'feature' | 'resource';
 export type SuggestionStatus = 'pending' | 'approved' | 'rejected';
 
 /** A community-submitted correction, new link, or link edit, awaiting moderation. */
@@ -97,10 +97,12 @@ export interface Suggestion {
   id: number;
   kind: SuggestionKind;
   status: SuggestionStatus;
-  // Correction payload (null for link kinds).
+  // Correction payload (null for link kinds). Reused by 'resource': field =
+  // resource kind, value = title, url = resource URL.
   app_id: string | null;
   field: string | null;
   value: string | null;
+  url: string | null;
   // Link payload: link_id is set for edit_link; source/target for new_link.
   link_id: number | null;
   source_id: string | null;
@@ -125,6 +127,10 @@ export interface SuggestionInput {
   target_id?: string;
   relationship?: Relationship;
   link_description?: string;
+  // Resource suggestion (tutorial / video).
+  resource_kind?: ResourceKind;
+  title?: string;
+  url?: string;
   comment?: string;
   submitter?: string;
 }

@@ -571,7 +571,7 @@ app.delete('/api/projects/:id', requireAdmin, async (req, res, next) => {
 // new link or a field correction here without a token; an admin then approves
 // (which APPLIES the change) or rejects in the Admin tab.
 
-const SUGGESTION_COLUMNS = `id, kind, status, app_id, field, value,
+const SUGGESTION_COLUMNS = `id, kind, status, app_id, field, value, url,
   link_id, source_id, target_id, relationship, link_description, comment, submitter,
   created_at, resolved_at`;
 
@@ -581,12 +581,14 @@ const ensureSuggestionTable = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS suggestion (
       id           SERIAL PRIMARY KEY,
-      kind         TEXT NOT NULL CHECK (kind IN ('new_link', 'correction', 'edit_link', 'feature')),
+      kind         TEXT NOT NULL
+                     CHECK (kind IN ('new_link', 'correction', 'edit_link', 'feature', 'resource')),
       status       TEXT NOT NULL DEFAULT 'pending'
                      CHECK (status IN ('pending', 'approved', 'rejected')),
       app_id       TEXT REFERENCES application(id) ON DELETE CASCADE,
       field        TEXT,
       value        TEXT,
+      url          TEXT,
       link_id          INTEGER REFERENCES application_link(id) ON DELETE CASCADE,
       source_id        TEXT REFERENCES application(id) ON DELETE CASCADE,
       target_id        TEXT REFERENCES application(id) ON DELETE CASCADE,
@@ -604,9 +606,10 @@ const ensureSuggestionTable = async () => {
   await query(
     'ALTER TABLE suggestion ADD COLUMN IF NOT EXISTS link_id INTEGER REFERENCES application_link(id) ON DELETE CASCADE'
   );
+  await query('ALTER TABLE suggestion ADD COLUMN IF NOT EXISTS url TEXT');
   await query('ALTER TABLE suggestion DROP CONSTRAINT IF EXISTS suggestion_kind_check');
   await query(
-    "ALTER TABLE suggestion ADD CONSTRAINT suggestion_kind_check CHECK (kind IN ('new_link', 'correction', 'edit_link', 'feature'))"
+    "ALTER TABLE suggestion ADD CONSTRAINT suggestion_kind_check CHECK (kind IN ('new_link', 'correction', 'edit_link', 'feature', 'resource'))"
   );
 };
 
@@ -669,8 +672,8 @@ app.post('/api/suggestions', async (req, res, next) => {
   try {
     const b = req.body ?? {};
     const kind = b.kind;
-    if (!['new_link', 'correction', 'edit_link', 'feature'].includes(kind)) {
-      return res.status(400).json({ error: "Invalid suggestion kind." });
+    if (!['new_link', 'correction', 'edit_link', 'feature', 'resource'].includes(kind)) {
+      return res.status(400).json({ error: 'Invalid suggestion kind.' });
     }
 
     const comment = trimOrNull(b.comment);
@@ -733,6 +736,30 @@ app.post('/api/suggestions', async (req, res, next) => {
          VALUES ('feature', $1, $2)
          RETURNING ${SUGGESTION_COLUMNS}`,
         [comment, submitter]
+      );
+      row = result.rows[0];
+    } else if (kind === 'resource') {
+      const appId = trimOrNull(b.app_id);
+      const resKind = trimOrNull(b.resource_kind);
+      const title = trimOrNull(b.title);
+      const resUrl = trimOrNull(b.url);
+      if (!appId) return res.status(400).json({ error: 'app_id is required for a resource.' });
+      if (!RESOURCE_KINDS.has(resKind)) {
+        return res.status(400).json({ error: "resource_kind must be 'tutorial' or 'video'." });
+      }
+      if (!title) return res.status(400).json({ error: 'Title is required.' });
+      if (title.length > 200) return res.status(400).json({ error: 'Title is too long (max 200).' });
+      if (!isHttpUrl(resUrl)) {
+        return res.status(400).json({ error: 'URL must start with http:// or https://' });
+      }
+      const missing = await missingApps([appId]);
+      if (missing.length) return res.status(400).json({ error: `Unknown application: ${missing[0]}` });
+
+      const result = await query(
+        `INSERT INTO suggestion (kind, app_id, field, value, url, comment, submitter)
+         VALUES ('resource', $1, $2, $3, $4, $5, $6)
+         RETURNING ${SUGGESTION_COLUMNS}`,
+        [appId, resKind, title, resUrl, comment, submitter]
       );
       row = result.rows[0];
     } else {
@@ -846,6 +873,25 @@ app.post('/api/suggestions/:id/approve', requireAdmin, async (req, res, next) =>
         await client.query('ROLLBACK');
         if (e.code === '23505') return res.status(409).json({ error: 'That exact link already exists.' });
         if (e.code === '23514') return res.status(400).json({ error: 'Invalid relationship.' });
+        throw e;
+      }
+    } else if (s.kind === 'resource') {
+      if (!s.app_id) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'The target application no longer exists.' });
+      }
+      if (!RESOURCE_KINDS.has(s.field)) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: `Invalid resource kind: ${s.field}` });
+      }
+      try {
+        await client.query(
+          `INSERT INTO app_resource (app_id, kind, title, url, sort) VALUES ($1, $2, $3, $4, 0)`,
+          [s.app_id, s.field, s.value, s.url]
+        );
+      } catch (e) {
+        await client.query('ROLLBACK');
+        if (e.code === '23503') return res.status(409).json({ error: 'The target application no longer exists.' });
         throw e;
       }
     } else if (s.kind === 'new_link') {

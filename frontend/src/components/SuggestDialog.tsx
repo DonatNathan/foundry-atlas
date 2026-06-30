@@ -8,11 +8,15 @@ import {
   FormGroup,
   HTMLSelect,
   InputGroup,
-  Radio,
-  RadioGroup,
   TextArea,
 } from '@blueprintjs/core';
-import type { Application, Relationship, SuggestionInput, SuggestionKind } from '../types';
+import type {
+  Application,
+  Relationship,
+  ResourceKind,
+  SuggestionInput,
+  SuggestionKind,
+} from '../types';
 import { RELATIONSHIP_VERBS, STATUS_LABELS, TIER_LABELS } from '../data';
 import { useData } from '../DataContext';
 import { submitSuggestion } from '../api';
@@ -66,7 +70,8 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
     ? editableLinks.filter((l) => l.source_id === initialApp.id || l.target_id === initialApp.id)
     : editableLinks;
 
-  const [kind, setKind] = useState<SuggestionKind>('correction');
+  // Empty until the user picks a type from the dropdown.
+  const [kind, setKind] = useState<SuggestionKind | ''>('');
   // Correction state.
   const [appId, setAppId] = useState('');
   const [field, setField] = useState('description');
@@ -80,6 +85,10 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
   const [editLinkId, setEditLinkId] = useState<number | null>(null);
   const [editRelationship, setEditRelationship] = useState<Relationship>('feeds');
   const [editDescription, setEditDescription] = useState('');
+  // Resource state (tutorial / video).
+  const [resourceKind, setResourceKind] = useState<ResourceKind>('tutorial');
+  const [resourceTitle, setResourceTitle] = useState('');
+  const [resourceUrl, setResourceUrl] = useState('');
   // Common.
   const [comment, setComment] = useState('');
   const [submitter, setSubmitter] = useState('');
@@ -97,7 +106,7 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
     // Default the edit-link picker to the first offered link (already scoped to
     // the opened app, if any).
     const startLink = linkOptions[0] ?? null;
-    setKind('correction');
+    setKind('');
     setAppId(start?.id ?? '');
     setField('description');
     setValue(start ? fieldValue(start, 'description') : '');
@@ -108,6 +117,9 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
     setEditLinkId(startLink?.id ?? null);
     setEditRelationship(startLink?.relationship ?? 'feeds');
     setEditDescription(startLink?.description ?? '');
+    setResourceKind('tutorial');
+    setResourceTitle('');
+    setResourceUrl('');
     setComment('');
     setSubmitter('');
     setError(null);
@@ -141,6 +153,7 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
 
   const submit = async () => {
     setError(null);
+    if (!kind) return setError('Choose a suggestion type.');
     let input: SuggestionInput;
     if (kind === 'correction') {
       if (!appId) return setError('Pick the application to correct.');
@@ -158,6 +171,21 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
     } else if (kind === 'feature') {
       if (!comment.trim()) return setError('Describe the feature you have in mind.');
       input = { kind, comment, submitter };
+    } else if (kind === 'resource') {
+      if (!appId) return setError('Pick the application this is about.');
+      if (!resourceTitle.trim()) return setError('Add a title.');
+      if (!/^https?:\/\/\S+$/i.test(resourceUrl.trim())) {
+        return setError('Add a valid URL (starting with http:// or https://).');
+      }
+      input = {
+        kind,
+        app_id: appId,
+        resource_kind: resourceKind,
+        title: resourceTitle,
+        url: resourceUrl,
+        comment,
+        submitter,
+      };
     } else {
       if (!sourceId || !targetId) return setError('Pick both applications for the link.');
       if (sourceId === targetId) return setError('A link must connect two different applications.');
@@ -264,19 +292,23 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
             </p>
 
             <FormGroup label="What would you like to suggest?">
-              <RadioGroup
-                inline
-                selectedValue={kind}
-                onChange={(e) => setKind(e.currentTarget.value as SuggestionKind)}
+              <HTMLSelect
+                fill
+                value={kind}
+                onChange={(e) => setKind(e.currentTarget.value as SuggestionKind | '')}
               >
-                <Radio label="Correct a detail" value="correction" />
-                <Radio label="Add a missing link" value="new_link" />
-                <Radio label="Edit a link" value="edit_link" disabled={linkOptions.length === 0} />
-                <Radio label="Suggest a feature" value="feature" />
-              </RadioGroup>
+                <option value="">Select a type…</option>
+                <option value="correction">Correct a detail</option>
+                <option value="new_link">Add a missing link</option>
+                <option value="edit_link" disabled={linkOptions.length === 0}>
+                  Edit a link
+                </option>
+                <option value="resource">Suggest a tutorial or video</option>
+                <option value="feature">Suggest a feature</option>
+              </HTMLSelect>
             </FormGroup>
 
-            {kind === 'correction' ? (
+            {kind === '' ? null : kind === 'correction' ? (
               <>
                 <div className="edit-row">
                   <FormGroup label="Application" className="edit-col">
@@ -339,6 +371,48 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
                   />
                 </FormGroup>
               </>
+            ) : kind === 'resource' ? (
+              <>
+                <div className="edit-row">
+                  <FormGroup label="Application" className="edit-col">
+                    <HTMLSelect fill value={appId} onChange={(e) => setAppId(e.currentTarget.value)}>
+                      {sortedApps.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name}
+                        </option>
+                      ))}
+                    </HTMLSelect>
+                  </FormGroup>
+                  <FormGroup label="Type" className="edit-col">
+                    <HTMLSelect
+                      fill
+                      value={resourceKind}
+                      onChange={(e) => setResourceKind(e.currentTarget.value as ResourceKind)}
+                    >
+                      <option value="tutorial">Foundry tutorial</option>
+                      <option value="video">YouTube video</option>
+                    </HTMLSelect>
+                  </FormGroup>
+                </div>
+                <FormGroup label="Title">
+                  <InputGroup
+                    value={resourceTitle}
+                    onChange={(e) => setResourceTitle(e.target.value)}
+                    placeholder={
+                      resourceKind === 'video'
+                        ? 'e.g. Pipeline Builder in 10 minutes'
+                        : 'e.g. Build your first pipeline'
+                    }
+                  />
+                </FormGroup>
+                <FormGroup label="URL">
+                  <InputGroup
+                    value={resourceUrl}
+                    onChange={(e) => setResourceUrl(e.target.value)}
+                    placeholder="https://…"
+                  />
+                </FormGroup>
+              </>
             ) : kind === 'new_link' ? (
               <>
                 <div className="edit-row">
@@ -397,7 +471,7 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
                   placeholder="Describe the feature you’d like to see in Foundry Atlas…"
                 />
               </FormGroup>
-            ) : (
+            ) : kind === '' ? null : (
               <FormGroup label="Why / source" labelInfo="(optional)">
                 <TextArea
                   value={comment}
@@ -409,13 +483,15 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
               </FormGroup>
             )}
 
-            <FormGroup label="Your name or handle" labelInfo="(optional)">
-              <InputGroup
-                value={submitter}
-                onChange={(e) => setSubmitter(e.target.value)}
-                placeholder="So we can credit you"
-              />
-            </FormGroup>
+            {kind !== '' && (
+              <FormGroup label="Your name or handle" labelInfo="(optional)">
+                <InputGroup
+                  value={submitter}
+                  onChange={(e) => setSubmitter(e.target.value)}
+                  placeholder="So we can credit you"
+                />
+              </FormGroup>
+            )}
 
             {error && (
               <Callout intent="danger" compact>
@@ -427,7 +503,13 @@ export default function SuggestDialog({ isOpen, apps, initialApp, onClose }: Sug
             actions={
               <>
                 <Button text="Cancel" onClick={onClose} disabled={submitting} />
-                <Button text="Submit suggestion" intent="primary" loading={submitting} onClick={submit} />
+                <Button
+                  text="Submit suggestion"
+                  intent="primary"
+                  loading={submitting}
+                  disabled={!kind}
+                  onClick={submit}
+                />
               </>
             }
           />
