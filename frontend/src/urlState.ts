@@ -46,6 +46,7 @@ export function parseShareState(search: string, allCategoryIds: readonly string[
       tiers: parseSet(p.get('tier'), ALL_TIERS),
       statuses: parseSet(p.get('status'), ALL_STATUSES),
       coreOnly: p.get('core') === 'true',
+      devOnly: p.get('dev') === 'true',
       learningPath: p.get('path') === 'true',
     },
   };
@@ -93,6 +94,7 @@ export function buildShareQuery(state: ShareState, allCategoryIds: readonly stri
   if (state.selectedId) p.set('app', state.selectedId);
   if (state.filters.learningPath) p.set('path', 'true');
   if (state.filters.coreOnly) p.set('core', 'true');
+  if (state.filters.devOnly) p.set('dev', 'true');
   appendSet(p, 'cat', state.filters.categories, allCategoryIds);
   appendSet(p, 'tier', state.filters.tiers, ALL_TIERS);
   appendSet(p, 'status', state.filters.statuses, ALL_STATUSES);

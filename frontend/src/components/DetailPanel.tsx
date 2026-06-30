@@ -4,6 +4,7 @@ import type { Application, Filters } from '../types';
 import { describeFilters, matchesFilters, RELATIONSHIP_VERBS, STATUS_LABELS, TIER_LABELS } from '../data';
 import { useData } from '../DataContext';
 import { exportNeighborhoodCard } from '../exportCard';
+import ProjectsDialog from './ProjectsDialog';
 
 interface DetailPanelProps {
   app: Application;
@@ -37,13 +38,15 @@ function youtubeId(rawUrl: string): string | null {
 }
 
 export default function DetailPanel({ app, filters, onSelect, onClose, onSuggest }: DetailPanelProps) {
-  const { appById, categories, categoryById, colorOf, links, resourcesOf } = useData();
+  const { appById, categories, categoryById, colorOf, links, resourcesOf, projectsOf } = useData();
   const resources = resourcesOf(app.id);
   const tutorials = resources.filter((r) => r.kind === 'tutorial');
   const videos = resources.filter((r) => r.kind === 'video');
+  const projects = projectsOf(app.id);
   const category = categoryById.get(app.category_id);
   const color = colorOf(app);
   const [exporting, setExporting] = useState(false);
+  const [projectsOpen, setProjectsOpen] = useState(false);
 
   const connections: Connection[] = [];
   for (const l of links) {
@@ -117,6 +120,11 @@ export default function DetailPanel({ app, filters, onSelect, onClose, onSuggest
             {TIER_LABELS[app.tier]}
           </Tag>
           {app.is_core && <Tag intent="success">Core — learn early</Tag>}
+          {app.available_in_dev && (
+            <Tag minimal intent="success" icon="code">
+              Dev tier
+            </Tag>
+          )}
           {app.status === 'new' && <Tag intent="primary">{STATUS_LABELS.new}</Tag>}
           {app.status === 'legacy' && <Tag intent="danger">{STATUS_LABELS.legacy}</Tag>}
           {app.learning_order != null && (
@@ -129,6 +137,16 @@ export default function DetailPanel({ app, filters, onSelect, onClose, onSuggest
       </div>
 
       <div className="detail-body">
+        <Button
+          intent="primary"
+          icon="learning"
+          fill
+          className="projects-cta"
+          onClick={() => setProjectsOpen(true)}
+        >
+          Practice projects{projects.length > 0 ? ` (${projects.length})` : ''}
+        </Button>
+
         <h4>What is it?</h4>
         <p>{app.description}</p>
 
@@ -254,6 +272,13 @@ export default function DetailPanel({ app, filters, onSelect, onClose, onSuggest
           </>
         )}
       </div>
+
+      <ProjectsDialog
+        isOpen={projectsOpen}
+        appName={app.name}
+        projects={projects}
+        onClose={() => setProjectsOpen(false)}
+      />
     </aside>
   );
 }

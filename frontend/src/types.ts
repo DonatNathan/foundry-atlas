@@ -28,6 +28,8 @@ export interface Application {
   use_case: string;
   tier: Tier;
   is_core: boolean;
+  /** Whether the app is available in the Foundry Developer (dev) tier. */
+  available_in_dev: boolean;
   learning_order: number | null;
   status: Status;
   era: string | null;
@@ -57,11 +59,25 @@ export interface AppResource {
   sort: number;
 }
 
+/** A self-learning "practice project" attached to an application. */
+export interface AppProject {
+  /** Stable row id from the API (absent in the bundled snapshot). */
+  id?: number;
+  app_id: string;
+  kind: string;
+  title: string;
+  context: string;
+  instructions: string;
+  dataset_url: string | null;
+  sort: number;
+}
+
 export interface GraphPayload {
   categories: Category[];
   applications: Application[];
   links: AppLink[];
   resources: AppResource[];
+  projects: AppProject[];
 }
 
 export interface Filters {
@@ -69,10 +85,11 @@ export interface Filters {
   tiers: Set<Tier>;
   statuses: Set<Status>;
   coreOnly: boolean;
+  devOnly: boolean;
   learningPath: boolean;
 }
 
-export type SuggestionKind = 'new_link' | 'correction' | 'edit_link';
+export type SuggestionKind = 'new_link' | 'correction' | 'edit_link' | 'feature';
 export type SuggestionStatus = 'pending' | 'approved' | 'rejected';
 
 /** A community-submitted correction, new link, or link edit, awaiting moderation. */

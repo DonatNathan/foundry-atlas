@@ -33,11 +33,12 @@ try {
     await client.query(
       `INSERT INTO application
          (id, name, category_id, description, use_case, tier, is_core,
-          learning_order, status, era, docs_url, tips)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+          available_in_dev, learning_order, status, era, docs_url, tips)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
       [
         a.id, a.name, a.category_id, a.description, a.use_case, a.tier,
-        a.is_core, a.learning_order, a.status, a.era, a.docs_url, a.tips,
+        a.is_core, a.available_in_dev ?? false, a.learning_order, a.status,
+        a.era, a.docs_url, a.tips,
       ]
     );
   }
@@ -59,11 +60,19 @@ try {
     );
   }
 
+  for (const p of graph.projects ?? []) {
+    await client.query(
+      `INSERT INTO app_project (app_id, kind, title, context, instructions, dataset_url, sort)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [p.app_id, p.kind, p.title, p.context, p.instructions, p.dataset_url ?? null, p.sort ?? 0]
+    );
+  }
+
   await client.query('COMMIT');
   console.log(
     `Seeded: ${graph.categories.length} categories, ` +
       `${graph.applications.length} applications, ${graph.links.length} links, ` +
-      `${(graph.resources ?? []).length} resources.`
+      `${(graph.resources ?? []).length} resources, ${(graph.projects ?? []).length} projects.`
   );
 } catch (err) {
   await client.query('ROLLBACK');

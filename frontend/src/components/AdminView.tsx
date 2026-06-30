@@ -3,6 +3,7 @@ import { Alert, Button, HTMLTable, Icon, InputGroup, Tag } from '@blueprintjs/co
 import type {
   Application,
   AppLink,
+  AppProject,
   AppResource,
   Category,
   Suggestion,
@@ -14,6 +15,7 @@ import EditAppDialog from './EditAppDialog';
 import CategoryDialog from './CategoryDialog';
 import LinkDialog from './LinkDialog';
 import ResourceDialog from './ResourceDialog';
+import ProjectDialog from './ProjectDialog';
 import SuggestionQueue from './SuggestionQueue';
 
 interface AdminViewProps {
@@ -30,17 +32,21 @@ interface AdminViewProps {
   onCreateResource: (r: AppResource) => Promise<void>;
   onUpdateResource: (r: AppResource) => Promise<void>;
   onDeleteResource: (r: AppResource) => Promise<void>;
+  onCreateProject: (p: AppProject) => Promise<void>;
+  onUpdateProject: (p: AppProject) => Promise<void>;
+  onDeleteProject: (p: AppProject) => Promise<void>;
   suggestions: Suggestion[];
   onApproveSuggestion: (s: Suggestion) => Promise<void>;
   onRejectSuggestion: (s: Suggestion) => Promise<void>;
   onFetchSuggestions: (status: SuggestionStatus) => Promise<Suggestion[]>;
 }
 
-type Section = 'apps' | 'categories' | 'links' | 'resources' | 'suggestions';
+type Section = 'apps' | 'categories' | 'links' | 'resources' | 'projects' | 'suggestions';
 type AppEditing = { app: Application; mode: 'create' | 'edit' };
 type CatEditing = { category: Category; mode: 'create' | 'edit' };
 type LinkEditing = { link: AppLink; mode: 'create' | 'edit' };
 type ResourceEditing = { resource: AppResource; mode: 'create' | 'edit' };
+type ProjectEditing = { project: AppProject; mode: 'create' | 'edit' };
 
 export default function AdminView({
   apps,
@@ -56,12 +62,15 @@ export default function AdminView({
   onCreateResource,
   onUpdateResource,
   onDeleteResource,
+  onCreateProject,
+  onUpdateProject,
+  onDeleteProject,
   suggestions,
   onApproveSuggestion,
   onRejectSuggestion,
   onFetchSuggestions,
 }: AdminViewProps) {
-  const { categories, categoryById, colorOf, links, resources } = useData();
+  const { categories, categoryById, colorOf, links, resources, projects } = useData();
 
   const [section, setSection] = useState<Section>('apps');
   const [query, setQuery] = useState('');
@@ -74,6 +83,8 @@ export default function AdminView({
   const [linkDeleting, setLinkDeleting] = useState<AppLink | null>(null);
   const [resourceEditing, setResourceEditing] = useState<ResourceEditing | null>(null);
   const [resourceDeleting, setResourceDeleting] = useState<AppResource | null>(null);
+  const [projectEditing, setProjectEditing] = useState<ProjectEditing | null>(null);
+  const [projectDeleting, setProjectDeleting] = useState<AppProject | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
 
@@ -115,6 +126,7 @@ export default function AdminView({
     use_case: '',
     tier: 'beginner',
     is_core: false,
+    available_in_dev: false,
     learning_order: null,
     status: 'stable',
     era: null,
@@ -141,6 +153,16 @@ export default function AdminView({
     kind: 'tutorial',
     title: '',
     url: '',
+    sort: 0,
+  });
+
+  const blankProject = (): AppProject => ({
+    app_id: apps[0]?.id ?? '',
+    kind: '',
+    title: '',
+    context: '',
+    instructions: '',
+    dataset_url: null,
     sort: 0,
   });
 
@@ -220,6 +242,29 @@ export default function AdminView({
     setResourceEditing(null);
   };
 
+  const projectRows = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const list = q
+      ? projects.filter(
+          (p) =>
+            p.title.toLowerCase().includes(q) ||
+            p.kind.toLowerCase().includes(q) ||
+            nameOf(p.app_id).toLowerCase().includes(q)
+        )
+      : projects;
+    return [...list].sort(
+      (a, b) => nameOf(a.app_id).localeCompare(nameOf(b.app_id)) || a.sort - b.sort
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projects, query, appById]);
+
+  const saveProject = async (p: AppProject) => {
+    if (!projectEditing) return;
+    if (projectEditing.mode === 'create') await onCreateProject(p);
+    else await onUpdateProject(p);
+    setProjectEditing(null);
+  };
+
   const runDelete = async (fn: () => Promise<void>, clear: () => void) => {
     setDeleteBusy(true);
     setDeleteError(null);
@@ -263,9 +308,18 @@ export default function AdminView({
         disabled={apps.length === 0}
         onClick={() => setResourceEditing({ resource: blankResource(), mode: 'create' })}
       />
+    ) : section === 'projects' ? (
+      <Button
+        icon="add"
+        intent="primary"
+        text="New project"
+        disabled={apps.length === 0}
+        onClick={() => setProjectEditing({ project: blankProject(), mode: 'create' })}
+      />
     ) : null;
 
-  const searchable = section === 'apps' || section === 'links' || section === 'resources';
+  const searchable =
+    section === 'apps' || section === 'links' || section === 'resources' || section === 'projects';
 
   return (
     <div className="admin-view bp6-dark">
@@ -307,6 +361,12 @@ export default function AdminView({
           onClick={() => setSection('resources')}
         >
           Resources
+        </button>
+        <button
+          className={section === 'projects' ? 'active' : ''}
+          onClick={() => setSection('projects')}
+        >
+          Projects
         </button>
         <button
           className={section === 'suggestions' ? 'active' : ''}
@@ -546,6 +606,62 @@ export default function AdminView({
           </HTMLTable>
         )}
 
+        {section === 'projects' && (
+          <HTMLTable striped className="app-table admin-table">
+            <thead>
+              <tr>
+                <th>Application</th>
+                <th>Kind</th>
+                <th>Title</th>
+                <th>Dataset</th>
+                <th className="th-actions" aria-label="Actions" />
+              </tr>
+            </thead>
+            <tbody>
+              {projectRows.map((p) => (
+                <tr key={p.id}>
+                  <td>
+                    <span className="cell-name">
+                      <span className="dot" style={{ background: dotColor(p.app_id) }} />
+                      {nameOf(p.app_id)}
+                    </span>
+                  </td>
+                  <td>
+                    <Tag minimal intent="primary">
+                      {p.kind}
+                    </Tag>
+                  </td>
+                  <td>{p.title}</td>
+                  <td className="cell-num">
+                    {p.dataset_url ? <Icon icon="tick" size={14} /> : '—'}
+                  </td>
+                  <td className="cell-actions">
+                    <button
+                      className="row-edit"
+                      title="Edit"
+                      aria-label={`Edit ${p.title}`}
+                      onClick={() => setProjectEditing({ project: p, mode: 'edit' })}
+                    >
+                      <Icon icon="edit" size={14} />
+                    </button>
+                    <button
+                      className="row-edit row-delete"
+                      title="Delete"
+                      aria-label={`Delete ${p.title}`}
+                      onClick={() => {
+                        setDeleteError(null);
+                        setProjectDeleting(p);
+                      }}
+                    >
+                      <Icon icon="trash" size={14} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </HTMLTable>
+        )}
+
         {section === 'suggestions' && (
           <div className="suggestion-panel">
             <div className="suggestion-statusbar">
@@ -618,6 +734,14 @@ export default function AdminView({
         apps={apps}
         onClose={() => setResourceEditing(null)}
         onSave={saveResource}
+      />
+
+      <ProjectDialog
+        project={projectEditing?.project ?? null}
+        mode={projectEditing?.mode}
+        apps={apps}
+        onClose={() => setProjectEditing(null)}
+        onSave={saveProject}
       />
 
       <Alert
@@ -698,6 +822,26 @@ export default function AdminView({
       >
         <p>
           Delete the resource <strong>{resourceDeleting?.title}</strong>? This cannot be undone.
+        </p>
+        {deleteError && <p className="admin-delete-error">{deleteError}</p>}
+      </Alert>
+
+      <Alert
+        isOpen={projectDeleting !== null}
+        className="bp6-dark"
+        intent="danger"
+        icon="trash"
+        confirmButtonText="Delete"
+        cancelButtonText="Cancel"
+        loading={deleteBusy}
+        onCancel={() => setProjectDeleting(null)}
+        onConfirm={() =>
+          projectDeleting &&
+          runDelete(() => onDeleteProject(projectDeleting), () => setProjectDeleting(null))
+        }
+      >
+        <p>
+          Delete the project <strong>{projectDeleting?.title}</strong>? This cannot be undone.
         </p>
         {deleteError && <p className="admin-delete-error">{deleteError}</p>}
       </Alert>

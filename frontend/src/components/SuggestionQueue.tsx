@@ -24,6 +24,7 @@ const FIELD_LABELS: Record<string, string> = {
   tier: 'Experience level',
   status: 'Generation',
   is_core: 'Core application',
+  available_in_dev: 'Available in dev tier',
   learning_order: 'Learning-path step',
   era: 'Era',
   docs_url: 'Docs URL',
@@ -66,6 +67,7 @@ export default function SuggestionQueue({
     if (s.field === 'tier') return v ? (TIER_LABELS[v as keyof typeof TIER_LABELS] ?? v) : '—';
     if (s.field === 'status') return v ? (STATUS_LABELS[v as keyof typeof STATUS_LABELS] ?? v) : '—';
     if (s.field === 'is_core') return v === 'true' ? 'Yes — core' : 'No';
+    if (s.field === 'available_in_dev') return v === 'true' ? 'Yes' : 'No';
     if (v == null || v === '') return '(empty)';
     return v;
   };
@@ -93,6 +95,10 @@ export default function SuggestionQueue({
               ) : s.kind === 'edit_link' ? (
                 <Tag minimal intent="warning" icon="link">
                   Edit link
+                </Tag>
+              ) : s.kind === 'feature' ? (
+                <Tag minimal intent="none" icon="lightbulb">
+                  Feature idea
                 </Tag>
               ) : (
                 <Tag minimal intent="success" icon="new-link">
@@ -155,6 +161,10 @@ export default function SuggestionQueue({
                   </div>
                 );
               })()
+            ) : s.kind === 'feature' ? (
+              <div className="suggestion-body">
+                <div className="suggestion-value">{s.comment}</div>
+              </div>
             ) : (
               <div className="suggestion-body">
                 <span className="suggestion-target">
@@ -176,7 +186,10 @@ export default function SuggestionQueue({
               </div>
             )}
 
-            {s.comment && <blockquote className="suggestion-comment">“{s.comment}”</blockquote>}
+            {/* For feature ideas the text is shown above; other kinds show it as a note. */}
+            {s.comment && s.kind !== 'feature' && (
+              <blockquote className="suggestion-comment">“{s.comment}”</blockquote>
+            )}
 
             {error?.id === s.id && <p className="admin-delete-error">{error.msg}</p>}
           </div>
