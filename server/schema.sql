@@ -74,7 +74,12 @@ CREATE TABLE app_project (
   context      TEXT NOT NULL,            -- real-life scenario / background
   instructions TEXT NOT NULL,            -- global step-by-step instructions
   dataset_url  TEXT,                     -- optional downloadable dataset
-  sort         INTEGER NOT NULL DEFAULT 0
+  sort         INTEGER NOT NULL DEFAULT 0,
+  -- Multi-project ("track"): projects sharing a `track` label form an ordered,
+  -- possibly cross-application series; `track_step` is the 1-based position.
+  -- NULL track = a standalone (solo) project.
+  track        TEXT,
+  track_step   INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX idx_project_app ON app_project(app_id);

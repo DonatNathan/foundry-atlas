@@ -164,6 +164,8 @@ export default function AdminView({
     instructions: '',
     dataset_url: null,
     sort: 0,
+    track: null,
+    track_step: 0,
   });
 
   const appRows = useMemo(() => {

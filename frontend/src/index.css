@@ -1366,9 +1366,99 @@ h4 {
   margin: 0 0 0 -6px;
 }
 
+.project-detail-tags {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
 .project-kind-tag {
   margin: 0;
   flex: none;
+}
+
+.project-track-banner {
+  margin-bottom: 4px;
+}
+
+/* Multi-project (track) navigation */
+.project-card-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.track-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.track-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  background: rgba(47, 52, 60, 0.45);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.track-step:hover {
+  border-color: var(--accent);
+  background: rgba(76, 144, 240, 0.12);
+}
+
+.track-step.current {
+  border-color: var(--accent);
+  background: rgba(76, 144, 240, 0.14);
+  cursor: default;
+}
+
+.track-step-num {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.track-step-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.track-step-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.track-step-app {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.track-next {
+  margin-top: 6px;
 }
 
 .project-context {

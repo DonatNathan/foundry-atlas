@@ -8,6 +8,7 @@ import {
   FormGroup,
   HTMLSelect,
   InputGroup,
+  NumericInput,
   TextArea,
 } from '@blueprintjs/core';
 import type { Application, AppProject } from '../types';
@@ -50,6 +51,16 @@ export default function ProjectDialog({
   const set = <K extends keyof AppProject>(key: K, value: AppProject[K]) =>
     setDraft((d) => (d ? { ...d, [key]: value } : d));
 
+  // A non-null `track` means the project belongs to a multi-project series.
+  const isTrack = draft.track !== null;
+  const setType = (type: 'solo' | 'multi') => {
+    if (type === 'multi') {
+      setDraft((d) => (d ? { ...d, track: d.track ?? '', track_step: d.track_step || 1 } : d));
+    } else {
+      setDraft((d) => (d ? { ...d, track: null, track_step: 0 } : d));
+    }
+  };
+
   const submit = async () => {
     if (!draft.app_id) return setError('Pick an application.');
     if (!draft.kind.trim()) return setError('Kind is required.');
@@ -58,6 +69,9 @@ export default function ProjectDialog({
     if (!draft.instructions.trim()) return setError('Instructions are required.');
     if (draft.dataset_url && !isHttpUrl(draft.dataset_url)) {
       return setError('Dataset URL must start with http:// or https://');
+    }
+    if (isTrack && !(draft.track ?? '').trim()) {
+      return setError('Give the multi-project a name (the same name links its steps).');
     }
     setSaving(true);
     setError(null);
@@ -69,6 +83,8 @@ export default function ProjectDialog({
         context: draft.context.trim(),
         instructions: draft.instructions.trim(),
         dataset_url: draft.dataset_url ? draft.dataset_url.trim() : null,
+        track: isTrack ? (draft.track ?? '').trim() : null,
+        track_step: isTrack ? draft.track_step : 0,
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Save failed.');
@@ -139,6 +155,41 @@ export default function ProjectDialog({
             onChange={(e) => set('dataset_url', e.target.value || null)}
           />
         </FormGroup>
+
+        <FormGroup label="Project type">
+          <HTMLSelect
+            fill
+            value={isTrack ? 'multi' : 'solo'}
+            onChange={(e) => setType(e.currentTarget.value as 'solo' | 'multi')}
+          >
+            <option value="solo">Solo project</option>
+            <option value="multi">Part of a multi-project</option>
+          </HTMLSelect>
+        </FormGroup>
+
+        {isTrack && (
+          <div className="edit-row">
+            <FormGroup
+              label="Multi-project name"
+              className="edit-col"
+              helperText="Use the same name on each step to link them"
+            >
+              <InputGroup
+                value={draft.track ?? ''}
+                placeholder="e.g. End-to-end data workflow"
+                onChange={(e) => set('track', e.target.value)}
+              />
+            </FormGroup>
+            <FormGroup label="Step" className="edit-col" helperText="Order within the series">
+              <NumericInput
+                fill
+                min={1}
+                value={draft.track_step || 1}
+                onValueChange={(n) => set('track_step', Number.isNaN(n) ? 1 : n)}
+              />
+            </FormGroup>
+          </div>
+        )}
 
         {error && (
           <Callout intent="danger" compact>

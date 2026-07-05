@@ -88,7 +88,7 @@ app.get('/api/graph', async (_req, res, next) => {
       ),
       query('SELECT id, app_id, kind, title, url, sort FROM app_resource ORDER BY app_id, sort, id'),
       query(
-        `SELECT id, app_id, kind, title, context, instructions, dataset_url, sort
+        `SELECT id, app_id, kind, title, context, instructions, dataset_url, sort, track, track_step
          FROM app_project ORDER BY app_id, sort, id`
       ),
     ]);
@@ -479,13 +479,19 @@ const ensureProjectTable = async () => {
       context      TEXT NOT NULL,
       instructions TEXT NOT NULL,
       dataset_url  TEXT,
-      sort         INTEGER NOT NULL DEFAULT 0
+      sort         INTEGER NOT NULL DEFAULT 0,
+      track        TEXT,
+      track_step   INTEGER NOT NULL DEFAULT 0
     )
   `);
   await query('CREATE INDEX IF NOT EXISTS idx_project_app ON app_project(app_id)');
+  // Multi-project columns — added idempotently for existing deployments.
+  await query('ALTER TABLE app_project ADD COLUMN IF NOT EXISTS track TEXT');
+  await query('ALTER TABLE app_project ADD COLUMN IF NOT EXISTS track_step INTEGER NOT NULL DEFAULT 0');
 };
 
-const PROJECT_COLUMNS = 'id, app_id, kind, title, context, instructions, dataset_url, sort';
+const PROJECT_COLUMNS =
+  'id, app_id, kind, title, context, instructions, dataset_url, sort, track, track_step';
 
 const validateProject = (b) => {
   if (!b.app_id || String(b.app_id).trim() === '') return 'app_id is required.';
@@ -499,18 +505,27 @@ const validateProject = (b) => {
   if (b.sort !== undefined && b.sort !== null && !Number.isInteger(b.sort)) {
     return 'Sort must be an integer.';
   }
+  if (b.track_step !== undefined && b.track_step !== null && !Number.isInteger(b.track_step)) {
+    return 'Track step must be an integer.';
+  }
   return null;
 };
 
-const projectValues = (b) => [
-  b.app_id,
-  b.kind.trim(),
-  b.title.trim(),
-  b.context.trim(),
-  b.instructions.trim(),
-  b.dataset_url ? b.dataset_url.trim() : null,
-  b.sort ?? 0,
-];
+const projectValues = (b) => {
+  const track = b.track && String(b.track).trim() !== '' ? String(b.track).trim() : null;
+  return [
+    b.app_id,
+    b.kind.trim(),
+    b.title.trim(),
+    b.context.trim(),
+    b.instructions.trim(),
+    b.dataset_url ? b.dataset_url.trim() : null,
+    b.sort ?? 0,
+    track,
+    // A step only makes sense inside a track.
+    track ? (b.track_step ?? 0) : 0,
+  ];
+};
 
 app.post('/api/projects', requireAdmin, async (req, res, next) => {
   try {
@@ -518,8 +533,9 @@ app.post('/api/projects', requireAdmin, async (req, res, next) => {
     const invalid = validateProject(b);
     if (invalid) return res.status(400).json({ error: invalid });
     const result = await query(
-      `INSERT INTO app_project (app_id, kind, title, context, instructions, dataset_url, sort)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO app_project
+         (app_id, kind, title, context, instructions, dataset_url, sort, track, track_step)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING ${PROJECT_COLUMNS}`,
       projectValues(b)
     );
@@ -540,7 +556,7 @@ app.put('/api/projects/:id', requireAdmin, async (req, res, next) => {
     const result = await query(
       `UPDATE app_project
          SET app_id = $2, kind = $3, title = $4, context = $5, instructions = $6,
-             dataset_url = $7, sort = $8
+             dataset_url = $7, sort = $8, track = $9, track_step = $10
        WHERE id = $1
        RETURNING ${PROJECT_COLUMNS}`,
       [id, ...projectValues(b)]

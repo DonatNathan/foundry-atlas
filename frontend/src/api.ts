@@ -239,6 +239,8 @@ const projectBody = (p: AppProject) => ({
   instructions: p.instructions,
   dataset_url: p.dataset_url,
   sort: p.sort,
+  track: p.track,
+  track_step: p.track_step,
 });
 
 async function readProject(res: Response, fallback: string): Promise<AppProject> {

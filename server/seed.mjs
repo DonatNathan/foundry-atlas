@@ -62,9 +62,13 @@ try {
 
   for (const p of graph.projects ?? []) {
     await client.query(
-      `INSERT INTO app_project (app_id, kind, title, context, instructions, dataset_url, sort)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [p.app_id, p.kind, p.title, p.context, p.instructions, p.dataset_url ?? null, p.sort ?? 0]
+      `INSERT INTO app_project
+         (app_id, kind, title, context, instructions, dataset_url, sort, track, track_step)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [
+        p.app_id, p.kind, p.title, p.context, p.instructions, p.dataset_url ?? null,
+        p.sort ?? 0, p.track ?? null, p.track_step ?? 0,
+      ]
     );
   }
 

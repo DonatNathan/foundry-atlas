@@ -70,6 +70,10 @@ export interface AppProject {
   instructions: string;
   dataset_url: string | null;
   sort: number;
+  /** Multi-project: shared label of an ordered series; null = solo project. */
+  track: string | null;
+  /** 1-based position within the track (0 when solo). */
+  track_step: number;
 }
 
 export interface GraphPayload {
