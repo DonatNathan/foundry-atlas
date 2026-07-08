@@ -5,7 +5,7 @@
 // Example: ?view=map&app=ontology-manager&path=true
 import type { Filters, Status, Tier } from './types';
 
-export type ShareView = 'map' | 'table';
+export type ShareView = 'map' | 'table' | 'projects';
 
 export interface ShareState {
   view: ShareView;
@@ -39,7 +39,8 @@ function appendSet<T extends string>(
 export function parseShareState(search: string, allCategoryIds: readonly string[]): ShareState {
   const p = new URLSearchParams(search);
   return {
-    view: p.get('view') === 'table' ? 'table' : 'map',
+    view:
+      p.get('view') === 'table' ? 'table' : p.get('view') === 'projects' ? 'projects' : 'map',
     selectedId: p.get('app') || null,
     filters: {
       categories: parseSet(p.get('cat'), allCategoryIds),

@@ -886,7 +886,8 @@ h4 {
 
   /* Tighter table padding and a wrapping toolbar on small screens. */
   .table-view,
-  .admin-view {
+  .admin-view,
+  .projects-view {
     padding: 70px 14px 14px;
   }
 
@@ -1282,6 +1283,115 @@ h4 {
 .path-verb {
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+/* ---------- projects gallery page ---------- */
+
+.projects-view {
+  position: absolute;
+  z-index: 10;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 70px 64px 24px;
+  overflow-y: auto;
+  background: var(--bg);
+}
+
+.projects-view-head {
+  margin-bottom: 16px;
+}
+
+.projects-view-head h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.projects-view-sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.projects-view-empty {
+  max-width: 460px;
+}
+
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+  align-content: start;
+}
+
+.project-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  text-align: left;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.project-tile:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.project-tile-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-faint);
+}
+
+.project-tile h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.project-tile-context {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.project-tile-flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.project-tile-app {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.project-tile-arrow {
+  color: var(--text-faint);
 }
 
 /* ---------- self-learning projects ---------- */

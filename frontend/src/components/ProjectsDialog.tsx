@@ -7,6 +7,8 @@ interface ProjectsDialogProps {
   isOpen: boolean;
   appName: string;
   projects: AppProject[];
+  /** Open straight to this project's detail (e.g. from the Projects gallery). */
+  initialProjectId?: number | null;
   onClose: () => void;
 }
 
@@ -20,16 +22,22 @@ function groupByKind(projects: AppProject[]): [string, AppProject[]][] {
   return [...groups.entries()];
 }
 
-export default function ProjectsDialog({ isOpen, appName, projects, onClose }: ProjectsDialogProps) {
+export default function ProjectsDialog({
+  isOpen,
+  appName,
+  projects,
+  initialProjectId = null,
+  onClose,
+}: ProjectsDialogProps) {
   // All projects (not just this app's) so a multi-project can span applications.
   const { projects: allProjects, appById } = useData();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [wasOpen, setWasOpen] = useState(false);
 
-  // Reset to the list each time the dialog opens.
+  // On open, jump straight to a project if one was requested, else show the list.
   if (isOpen && !wasOpen) {
     setWasOpen(true);
-    setSelectedId(null);
+    setSelectedId(initialProjectId);
   } else if (!isOpen && wasOpen) {
     setWasOpen(false);
   }

@@ -4,6 +4,7 @@ import GraphView from './components/GraphView';
 import DetailPanel from './components/DetailPanel';
 import Sidebar from './components/Sidebar';
 import TableView from './components/TableView';
+import ProjectsView from './components/ProjectsView';
 import AdminView from './components/AdminView';
 import AdminControls from './components/AdminControls';
 import ShareButton from './components/ShareButton';
@@ -52,7 +53,7 @@ import type {
   Suggestion,
 } from './types';
 
-type View = 'map' | 'table' | 'admin';
+type View = 'map' | 'table' | 'projects' | 'admin';
 
 const TOKEN_KEY = 'foundry-admin-token';
 
@@ -332,6 +333,12 @@ export default function App() {
             >
               <Icon icon="th" size={14} /> Table
             </button>
+            <button
+              className={activeView === 'projects' ? 'active' : ''}
+              onClick={() => setView('projects')}
+            >
+              <Icon icon="learning" size={14} /> Projects
+            </button>
             {canEdit && (
               <button
                 className={activeView === 'admin' ? 'active' : ''}
@@ -384,6 +391,7 @@ export default function App() {
         {activeView === 'table' && (
           <TableView apps={apps} selectedId={selectedId} onSelect={setSelectedId} />
         )}
+        {activeView === 'projects' && <ProjectsView />}
         {activeView === 'admin' && (
           <AdminView
             apps={apps}
@@ -417,7 +425,7 @@ export default function App() {
             visibleCount={visibleApps.length}
           />
         )}
-        {selectedApp && activeView !== 'admin' && (
+        {selectedApp && (activeView === 'map' || activeView === 'table') && (
           <DetailPanel
             app={selectedApp}
             filters={filters}
