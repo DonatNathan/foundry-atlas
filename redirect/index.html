@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Foundry Atlas has moved</title>
+    <meta name="description" content="Foundry Atlas has a new home at foundry-atlas.com" />
+    <!-- Help search engines follow the move. -->
+    <link rel="canonical" href="https://foundry-atlas.com/" />
+    <!-- Fallback auto-redirect if JS is disabled. -->
+    <meta http-equiv="refresh" content="30; url=https://foundry-atlas.com/" />
+    <style>
+      :root {
+        --bg: #10141a;
+        --panel: rgba(28, 33, 39, 0.92);
+        --panel-border: #2f343c;
+        --text: #f6f7f9;
+        --text-muted: #abb3bf;
+        --text-faint: #5f6b7c;
+        --accent: #4c90f0;
+        font-family: 'Inter', -apple-system, 'BlinkMacSystemFont', 'Segoe UI', 'Roboto',
+          'Helvetica Neue', sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        color: var(--text);
+        background:
+          radial-gradient(900px 500px at 72% 30%, rgba(76, 144, 240, 0.14), transparent 60%),
+          radial-gradient(700px 500px at 20% 90%, rgba(19, 201, 186, 0.1), transparent 55%),
+          var(--bg);
+      }
+
+      .card {
+        width: 100%;
+        max-width: 460px;
+        padding: 34px 30px 28px;
+        text-align: center;
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-radius: 14px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(8px);
+        animation: rise 0.35s ease-out;
+      }
+
+      @keyframes rise {
+        from {
+          transform: translateY(10px);
+          opacity: 0;
+        }
+        to {
+          transform: none;
+          opacity: 1;
+        }
+      }
+
+      .wordmark {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        margin-bottom: 22px;
+      }
+
+      .wordmark svg {
+        width: 26px;
+        height: 26px;
+      }
+
+      .wordmark span {
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        background: linear-gradient(90deg, #4c90f0, #13c9ba);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      h1 {
+        margin: 0 0 10px;
+        font-size: 26px;
+        font-weight: 800;
+      }
+
+      p {
+        margin: 0 0 22px;
+        font-size: 15px;
+        line-height: 1.6;
+        color: var(--text-muted);
+      }
+
+      .new-url {
+        color: var(--text);
+        font-weight: 600;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 22px;
+        font-size: 15px;
+        font-weight: 600;
+        color: #fff;
+        text-decoration: none;
+        background: var(--accent);
+        border-radius: 8px;
+        box-shadow: 0 4px 16px rgba(76, 144, 240, 0.35);
+        transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+      }
+
+      .btn:hover {
+        background: #5c9cf5;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(76, 144, 240, 0.45);
+      }
+
+      .btn svg {
+        width: 15px;
+        height: 15px;
+      }
+
+      .countdown {
+        margin: 20px 0 0;
+        font-size: 12px;
+        color: var(--text-faint);
+      }
+
+      .countdown a {
+        color: var(--text-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="wordmark">
+        <!-- Hexagon mark, matching the app's branding. -->
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <polygon
+            points="25,6 75,6 100,50 75,94 25,94 0,50"
+            fill="none"
+            stroke="#4c90f0"
+            stroke-width="8"
+          />
+        </svg>
+        <span>Foundry Atlas</span>
+      </div>
+
+      <h1>We've moved!</h1>
+      <p>
+        Foundry Atlas now lives at a new address:<br />
+        <span class="new-url">foundry-atlas.com</span>
+      </p>
+
+      <a class="btn" href="https://foundry-atlas.com/">
+        Go to the new site
+        <!-- arrow -->
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M5 12h14M13 6l6 6-6 6"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </a>
+
+      <p class="countdown">
+        Redirecting automatically in <span id="secs">30</span>s…
+        <a href="https://foundry-atlas.com/">go now</a>
+      </p>
+    </main>
+
+    <script>
+      var NEW_URL = 'https://foundry-atlas.com/';
+      var remaining = 30;
+      var el = document.getElementById('secs');
+      var timer = setInterval(function () {
+        remaining -= 1;
+        if (el) el.textContent = String(Math.max(remaining, 0));
+        if (remaining <= 0) {
+          clearInterval(timer);
+          window.location.replace(NEW_URL);
+        }
+      }, 1000);
+    </script>
+  </body>
+</html>
